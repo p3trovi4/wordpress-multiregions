@@ -1,0 +1,126 @@
+type: install
+jpsVersion: '1.7.2'
+name: WordPress Cluster Multiregions
+id: wordpress-cluster-multiregions
+categories:
+  - apps/clusters
+  - apps/content-management
+description: 
+  text: WordPress Cluster package provides integrated autoscaling and high availability for development and production environments.
+    The platform automatically deploys and configures chosen tolopology and required addons at specified regions.
+  short: WordPress Cluster Pack
+logo: /images/wp-cluster-kit.png
+baseUrl: https://raw.githubusercontent.com/sych74/wordpress-multiregions/master
+
+settings:
+  fields:
+    - caption: Regions
+      type: regionlist
+      name: regions
+      disableInactive: true
+      selectFirstAvailable: true
+      multiSelect: true
+      min: 1
+      max: 3
+      filter:
+        isActive: true
+
+    - caption: Environment
+      type: envname
+      name: envName
+      dependsOn: region
+      randomName: true
+      showFullDomain: false
+      required: true
+
+    - caption: Scaling Strategy
+      type: list
+      name: loadGrowth
+      default: slow
+      required: true
+      width: 225
+      tooltip: | 
+        Configure auto-scaling triggers, i.e. how fast the system responds to load spikes by adding or removing nodes.
+        <p>Read more about <a href="https://docs.jelastic.com/automatic-horizontal-scaling">Automatic Horizontal Scaling</a></p>
+      values:        
+          - value: slow
+            caption: Low Load
+            tooltip: <h2>Low load scaling strategy</h2>add 1 new node when CPU > 70% <p>remove when CPU < 20%</p>
+          - value: medium
+            caption: Medium Load
+            tooltip: <h3>Medium load scaling strategy</h3>add 1 new node when CPU > 50% <p>remove when CPU < 20%</p>
+          - value: fast
+            caption: High Load
+            tooltip: <h3>High load scaling strategy</h3>add 2 new nodes when CPU > 30% <p>remove when CPU < 10%</p>
+
+    - caption: Advanced Features
+      type: displayfield
+      name: displayfield
+      markup:
+ 
+    - caption: WordPress Brute Force Attack Protection
+      type: checkbox
+      name: wp_protect
+      value: true
+      disabled: false
+      tooltip: "Secure WordPress Admin Panel with <a href='https://www.litespeedtech.com/support/wiki/doku.php/litespeed_wiki:config:wordpress-protection'>LiteSpeed Brute Force Protection</a> that limits failed login attempts. Default action is <b>Throttle</b> and number of allowed attempts is <b>100</b>"
+
+    - caption: Web Application Firewall
+      type: checkbox
+      name: waf
+      value: true
+      disabled: false
+      tooltip: "Protect web sites with <a href='https://www.litespeedtech.com/support/wiki/doku.php/litespeed_wiki:waf'>LiteSpeed built-in WAF</a> based on Free ModSecurity Rules from Comodo"
+             
+    - caption: Install Let's Encrypt SSL with Auto-Renewal
+      type: checkbox
+      name: le-addon
+      value: false
+      disabled: true
+
+    - caption: Install Lightning-Fast Premium CDN with 130+ PoPs
+      type: checkbox
+      name: cdn-addon
+      value: true
+      disabled: false
+
+    - caption: Install WordPress Multisite Network
+      type: checkbox
+      name: mu-addon
+      value: false
+      disabled: false
+      
+globals:
+  DB_USER: jelastic-${fn.random}
+  DB_PASS: ${fn.password(10)}
+  DB_HOST: sqldb
+  PROTOCOL: http
+  WP_ADMIN_PASS: ${fn.password(10)}
+  LS_ADMIN_PASS: ${fn.password(10)}
+  SUCCESS: success
+  EMAIL: default
+
+onInstall:
+  - 
+  - createEnvs
+  
+actions:
+  createEnvs:
+    - script: |
+        var regions = '${settings.regions}'.split(','),
+            actions = [];
+        for (var i = 1, n = regions.length + 1; i < n; i ++) {
+          actions.push({
+            jps: "https://raw.githubusercontent.com/sych74/wordpress-cluster/v3.0.0/manifest.jps?_r=${fn.random}",
+            envName: "${settings.envName}-" + i,
+            loggerName: "${settings.envName}-" + i,
+            envGroups: "${response.envGroups}",
+            displayName: "WP Cluster-" + i,
+            settings: {
+              
+              db_user: "${globals.DB_USER}",
+              db_pass: "${globals.DB_PASS}"
+            }  
+          });
+        }
+        return { result: 0, onAfterReturn: { install: actions } };
