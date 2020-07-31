@@ -118,9 +118,12 @@ actions:
         region-2: ${response.regions[1]:}
         region-3: ${response.regions[2]:}
         envGroups: ${response.envGroups}
-        db-cluster-1: true
-        db-cluster-2: false
-        db-cluster-3: false
+        displayName-1: WP Cluster Master
+        displayName-2: WP Cluster Slave 1
+        displayName-3: WP Cluster Slave 2
+        db_cluster-1: true
+        db_cluster-2: false
+        db_cluster-3: false
         st-cluster-1: true
         st-cluster-2: false
         st-cluster-3: false
@@ -135,17 +138,19 @@ actions:
             envName: "${settings.envName}-" + i,
             loggerName: "${settings.envName}-" + i,
             envGroups: "${globals.envGroups}",
-            displayName: "WP Cluster-" + i,
+            displayName: "${globals.displayName-" + i + "}",
             settings: {
-              ls-addon: "true",
               waf: "${settings.waf}",
               wp_protect: "${settings.wp_protect}",
+              is_install_wp: "false",
               is_db_cluster: "false",
               is_storage_cluster: "false",
-              galera: "${globals.db-cluster-}",
+              storage_nodes_count: 2,
+              db_cluster: "${globals.db_cluster-" + i + "}",
               db_user: "${globals.DB_USER}",
               db_pass: "${globals.DB_PASS}"
             }  
           });
         }
         return { result: 0, onAfterReturn: { install: actions } };
+ 
