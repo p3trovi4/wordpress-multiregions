@@ -91,10 +91,10 @@ settings:
       disabled: false
       
 globals:
-  DB_USER: jelastic-${fn.random}
-  DB_PASS: ${fn.password(10)}
-  DB_HOST: sqldb
-  PROTOCOL: http
+  db_user: jelastic-${fn.random}
+  db_pass: ${fn.password(10)}
+  db_host: sqldb
+  protocol: http
   WP_ADMIN_PASS: ${fn.password(10)}
   LS_ADMIN_PASS: ${fn.password(10)}
   SUCCESS: success
@@ -121,9 +121,9 @@ actions:
         displayName-1: WP Cluster Master
         displayName-2: WP Cluster Slave 1
         displayName-3: WP Cluster Slave 2
-        db_cluster-1: true
-        db_cluster-2: false
-        db_cluster-3: false
+        galera-1: true
+        galera-2: false
+        galera-3: false
         st-cluster-1: true
         st-cluster-2: false
         st-cluster-3: false
@@ -146,9 +146,9 @@ actions:
               is_db_cluster: "false",
               is_storage_cluster: "false",
               storage_nodes_count: 2,
-              db_cluster: "${globals.db_cluster-" + i + "}",
-              db_user: "${globals.DB_USER}",
-              db_pass: "${globals.DB_PASS}"
+              galera: "${globals.galera-" + i + "}",
+              db_user: "${globals.db_user}",
+              db_pass: "${globals.db_pass}"
             }  
           });
         }
