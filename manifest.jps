@@ -103,6 +103,7 @@ globals:
 onInstall:
   - setGlobals
   - createEnvs
+  - mountStorage
   
 actions:
 
@@ -124,21 +125,22 @@ actions:
         galera-1: true
         galera-2: false
         galera-3: false
-        st-cluster-1: true
-        st-cluster-2: false
-        st-cluster-3: false
+        glusterfs-1: true
+        glusterfs-2: false
+        glusterfs-3: false
 
   createEnvs:
     - script: |
         var regions = '${settings.regions}'.split(','),
             actions = [];
-        for (var i = 1, n = regions.length + 1; i < n; i ++) {
+        for (var i = cluster, n = regions.length + 1; cluster < n; cluster ++) {
           actions.push({
             jps: "https://raw.githubusercontent.com/sych74/wordpress-cluster/v3.0.0/manifest.jps?_r=${fn.random}",
-            envName: "${settings.envName}-" + i,
-            loggerName: "${settings.envName}-" + i,
+            envName: "${settings.envName}-" + cluster,
+            loggerName: "${settings.envName}-" + cluster,
             envGroups: "${globals.envGroups}",
-            displayName: "${globals.displayName-" + i + "}",
+            displayName: "${globals.displayName-" + cluster + "}",
+            region: "${globals.region-" + cluster + "}",
             settings: {
               waf: "${settings.waf}",
               wp_protect: "${settings.wp_protect}",
@@ -146,11 +148,32 @@ actions:
               is_db_cluster: "false",
               is_storage_cluster: "false",
               storage_nodes_count: 2,
-              galera: "${globals.galera-" + i + "}",
+              galera: "${globals.galera-" + cluster + "}",
+              glusterfs: "${globals.glusterfs-" + cluster + "}",
               db_user: "${globals.db_user}",
               db_pass: "${globals.db_pass}"
             }  
           });
         }
         return { result: 0, onAfterReturn: { install: actions } };
- 
+        
+  mountStorage:
+    - script: |
+        var regions = '${settings.regions}'.split(','),
+            api = [];
+        for (var cluster = 1, n = regions.length + 1; cluster < n; cluster ++) {
+          api.push({
+            method: jelastic.environment.file.AddMountPointByGroup,
+            envName: "${settings.envName}-" + cluster,
+            params: {
+              nodeGroup: "cp",
+              sourceNodeId: "${nodes.storage.master.id}",
+              sourcePath: "/data",
+              path: "/var/www/webroot/ROOT",
+              sourceAddressType: "NODE_GROUP",
+              protocol: "NFS4"
+            }  
+          });
+        }
+        return { result: 0, onAfterReturn: { api: api } };
+   
