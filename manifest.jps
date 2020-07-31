@@ -101,10 +101,30 @@ globals:
   EMAIL: default
 
 onInstall:
-  - 
+  - setGlobals
   - createEnvs
   
 actions:
+
+  setGlobals:
+    - script: |
+        return {
+          result:0,
+          regions:'${settings.regions}'.split(','),
+          envGroups:eval('(' + MANIFEST + ')').envGroups
+        }
+    - setGlobals:
+        region-1: ${response.regions[0]}
+        region-2: ${response.regions[1]:}
+        region-3: ${response.regions[2]:}
+        envGroups: ${response.envGroups}
+        db-cluster-1: true
+        db-cluster-2: false
+        db-cluster-3: false
+        st-cluster-1: true
+        st-cluster-2: false
+        st-cluster-3: false
+
   createEnvs:
     - script: |
         var regions = '${settings.regions}'.split(','),
@@ -114,10 +134,15 @@ actions:
             jps: "https://raw.githubusercontent.com/sych74/wordpress-cluster/v3.0.0/manifest.jps?_r=${fn.random}",
             envName: "${settings.envName}-" + i,
             loggerName: "${settings.envName}-" + i,
-            envGroups: "${response.envGroups}",
+            envGroups: "${globals.envGroups}",
             displayName: "WP Cluster-" + i,
             settings: {
-              
+              ls-addon: "true",
+              waf: "${settings.waf}",
+              wp_protect: "${settings.wp_protect}",
+              is_db_cluster: "false",
+              is_storage_cluster: "false",
+              galera: "${globals.db-cluster-}",
               db_user: "${globals.DB_USER}",
               db_pass: "${globals.DB_PASS}"
             }  
