@@ -1,0 +1,44 @@
+jpsType: update
+id: geo-galera-cluster
+name: MariaDB Geo-Galera Cluster
+description: MariaDB Geo-Galera  Cluster
+
+globals:
+  path: "${settings.path}"
+  db_user: "${settings.db_user}"
+  db_pass: "${settings.db_pass}"
+  cluster_name: geo-galera-cluster
+  gluster_nodes_array: ${settings.gluster_nodes_array}
+  galera_conf: "/etc/mysql/conf.d/galera.cnf"
+    
+onInstall:
+  - initialSetup:
+      id: "sqldb"
+  - setupSeeds
+  - setupInstance:
+      id: "sqldb"
+        
+actions:
+  initialSetup:
+    - setupUser:
+        id: "${this.id}"
+    - setNodeDisplayName[${this.id}]: Galera
+    - cmd[${this.id}]: |-
+        wget ${globals.path}/scripts/mysql -O /etc/init.d/mysql
+        wget ${globals.path}/configs/galera.cnf -O ${globals.galera_conf} &>> /var/log/run.log
+      user: root
+        
+  setupUser:
+    cmd[${this.id}]: |-
+      wget ${globals.path}/scripts/setupUser.sh -O ~/setupUser.sh &>> /var/log/run.log
+      bash ~/setupUser.sh ${globals.db_user} ${globals.db_pass} &>> /var/log/run.log
+    user: root
+
+  setupInstance:
+    cmd[${this.id}]: |-
+      sed -i "s/server_id.*/server_id = $(echo '${env.region}' | md5sum | grep -Eo "[[:digit:]]{3}"  | head -n1)/" ${globals.galera_conf}
+      sed -i "s/bind-address.*/bind-address = $(hostname | cut -d'-' -f 1)/" ${globals.galera_conf}
+      sed -i "s/report_host.*/report_host = $(hostname | cut -d'-' -f 1)/" ${globals.galera_conf}
+      sed -i "s/wsrep_cluster_name.*/wsrep_cluster_name = ${globals.cluster_name}/" ${globals.galera_conf}
+      sed -i "s/wsrep_node_name.*/wsrep_node_name = $(hostname | cut -d'-' -f 1)/" ${globals.galera_conf}
+      sed -i "s/wsrep_cluster_address.*/wsrep_cluster_address = ${globals.gluster_nodes_array}/" ${globals.galera_conf}
