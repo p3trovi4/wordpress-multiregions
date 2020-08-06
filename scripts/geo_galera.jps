@@ -12,30 +12,26 @@ globals:
   galera_conf: "/etc/mysql/conf.d/galera.cnf"
     
 onInstall:
-  - initialSetup:
-      id: "sqldb"
-  - setupSeeds
-  - setupInstance:
-      id: "sqldb"
+  - initialSetup
+  - setupInstance
         
 actions:
   initialSetup:
     - setupUser:
-        id: "${this.id}"
-    - setNodeDisplayName[${this.id}]: Galera
-    - cmd[${this.id}]: |-
+    - setNodeDisplayName[sqldb]: Galera
+    - cmd[sqldb]: |-
         wget ${globals.path}/scripts/mysql -O /etc/init.d/mysql
         wget ${globals.path}/configs/galera.cnf -O ${globals.galera_conf} &>> /var/log/run.log
       user: root
         
   setupUser:
-    cmd[${this.id}]: |-
+    cmd[sqldb]: |-
       wget ${globals.path}/scripts/setupUser.sh -O ~/setupUser.sh &>> /var/log/run.log
       bash ~/setupUser.sh ${globals.db_user} ${globals.db_pass} &>> /var/log/run.log
     user: root
 
   setupInstance:
-    cmd[${this.id}]: |-
+    cmd[sqldb]: |-
       sed -i "s/server_id.*/server_id = $(echo '${env.region}' | md5sum | grep -Eo "[[:digit:]]{3}"  | head -n1)/" ${globals.galera_conf}
       sed -i "s/bind-address.*/bind-address = $(hostname | cut -d'-' -f 1)/" ${globals.galera_conf}
       sed -i "s/report_host.*/report_host = $(hostname | cut -d'-' -f 1)/" ${globals.galera_conf}
