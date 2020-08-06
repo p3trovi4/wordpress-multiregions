@@ -8,7 +8,7 @@ globals:
   db_user: "${settings.db_user}"
   db_pass: "${settings.db_pass}"
   cluster_name: geo-galera-cluster
-  gluster_nodes_array: ${settings.gluster_nodes_array}
+  galera_nodes_array: ${settings.galera_nodes_array}
   galera_conf: "/etc/mysql/conf.d/galera.cnf"
     
 onInstall:
@@ -41,4 +41,4 @@ actions:
       sed -i "s/report_host.*/report_host = $(hostname | cut -d'-' -f 1)/" ${globals.galera_conf}
       sed -i "s/wsrep_cluster_name.*/wsrep_cluster_name = ${globals.cluster_name}/" ${globals.galera_conf}
       sed -i "s/wsrep_node_name.*/wsrep_node_name = $(hostname | cut -d'-' -f 1)/" ${globals.galera_conf}
-      sed -i "s/wsrep_cluster_address.*/wsrep_cluster_address = ${globals.gluster_nodes_array}/" ${globals.galera_conf}
+      sed -i "s/wsrep_cluster_address.*/wsrep_cluster_address = ${globals.galera_nodes_array}/" ${globals.galera_conf}
