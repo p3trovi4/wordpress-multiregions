@@ -162,7 +162,8 @@ actions:
         
   setupGaleraCluster:
     - script: |
-        var galera_nodes_address = "",
+        var regions = '${settings.regions}'.split(','),
+            galera_nodes_address = "",
             actions = [];
         for (var cluster = 1, n = regions.length + 1; cluster < n; cluster ++) {
           var resp = jelastic.env.control.GetEnvInfo('${settings.envName}-' + cluster, session);
@@ -179,7 +180,7 @@ actions:
               path: "https://raw.githubusercontent.com/jelastic-jps/mysql-cluster/v2.0.0",
               db_user: "${globals.db_user}",
               db_pass: "${globals.db_pass}",
-              setup_galera_cluster: "true,"
+              setup_galera_cluster: "true",
               initial_galera_master: "false",
               initial_galera_slave: "false",
               galera_nodes_array: galera_nodes_address
@@ -190,7 +191,8 @@ actions:
 
   startGaleraCluster:
     - script: |
-        var actions = [];
+        var regions = '${settings.regions}'.split(','),
+            actions = [];
         for (var cluster = 1, n = regions.length + 1; cluster < n; cluster ++) {
           actions.push({
             jps: "https://raw.githubusercontent.com/sych74/wordpress-multiregions/master/scripts/geo_galera.jps?_r=${fn.random}",
@@ -199,10 +201,10 @@ actions:
               path: "https://raw.githubusercontent.com/jelastic-jps/mysql-cluster/v2.0.0",
               db_user: "${globals.db_user}",
               db_pass: "${globals.db_pass}",
-              setup_galera_cluster: "false,"
+              setup_galera_cluster: "false",
               initial_galera_master: "${globals.initial_galera_master-" + cluster + "}",
               initial_galera_slave: "${globals.initial_galera_slave-" + cluster + "}"
-            }
+            }  
           });
         }
         return { result: 0, onAfterReturn: { install: actions } };
@@ -226,3 +228,4 @@ actions:
           });
         }
         return { result: 0, onAfterReturn: { api: api } };
+   
