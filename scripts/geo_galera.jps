@@ -11,7 +11,7 @@ globals:
   galera_nodes_array: ${settings.galera_nodes_array}
   setup_galera_cluster: ${settings.setup_galera_cluster:true}
   initial_galera_master: ${settings.initial_galera_master:true}
-  initial_galera_slave: ${settings.initial_galera_slave:master}
+  initial_galera_slave: ${settings.initial_galera_slave:true}
   galera_conf: "/etc/mysql/conf.d/galera.cnf"
     
 onInstall:
