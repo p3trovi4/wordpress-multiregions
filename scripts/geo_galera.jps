@@ -37,4 +37,4 @@ actions:
       sed -i "s/report_host.*/report_host = $(hostname | cut -d'-' -f 1)/" ${globals.galera_conf}
       sed -i "s/wsrep_cluster_name.*/wsrep_cluster_name = ${globals.cluster_name}/" ${globals.galera_conf}
       sed -i "s/wsrep_node_name.*/wsrep_node_name = $(hostname | cut -d'-' -f 1)/" ${globals.galera_conf}
-      sed -i "s/wsrep_cluster_address.*/wsrep_cluster_address = gcomm://${globals.galera_nodes_array}/" ${globals.galera_conf}
+      sed -i "s/wsrep_cluster_address.*/wsrep_cluster_address = gcomm:\/\/${globals.galera_nodes_array}/" ${globals.galera_conf}
