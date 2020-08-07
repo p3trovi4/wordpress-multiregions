@@ -95,15 +95,14 @@ globals:
   db_pass: ${fn.password(10)}
   db_host: sqldb
   protocol: http
-  WP_ADMIN_PASS: ${fn.password(10)}
-  LS_ADMIN_PASS: ${fn.password(10)}
-  SUCCESS: success
-  EMAIL: default
+  wp_admin_pass: ${fn.password(10)}
+  ls_admin_pass: ${fn.password(10)}
+  success: success
+  email: default
 
 onInstall:
   - setGlobals
   - createEnvs
-  - mountStorage
   
 actions:
 
@@ -125,15 +124,12 @@ actions:
         galera-1: true
         galera-2: false
         galera-3: false
-        glusterfs-1: true
-        glusterfs-2: false
-        glusterfs-3: false
 
   createEnvs:
     - script: |
         var regions = '${settings.regions}'.split(','),
             actions = [];
-        for (var i = cluster, n = regions.length + 1; cluster < n; cluster ++) {
+        for (var cluster = 1, n = regions.length + 1; cluster < n; cluster ++) {
           actions.push({
             jps: "https://raw.githubusercontent.com/sych74/wordpress-cluster/v3.0.0/manifest.jps?_r=${fn.random}",
             envName: "${settings.envName}-" + cluster,
@@ -146,10 +142,9 @@ actions:
               wp_protect: "${settings.wp_protect}",
               is_install_wp: "false",
               is_db_cluster: "false",
-              is_storage_cluster: "false",
-              storage_nodes_count: 2,
+              is_storage_cluster: "true",
               galera: "${globals.galera-" + cluster + "}",
-              glusterfs: "${globals.glusterfs-" + cluster + "}",
+              glusterfs: "true",
               db_user: "${globals.db_user}",
               db_pass: "${globals.db_pass}"
             }  
@@ -157,6 +152,66 @@ actions:
         }
         return { result: 0, onAfterReturn: { install: actions } };
         
+  setupGaleraCluster:
+    - script: |
+        var galera_nodes_address = "";
+        for (var cluster = 1, n = regions.length + 1; cluster < n; cluster ++) {
+          var resp = jelastic.env.control.GetEnvInfo('${settings.envName}-' + cluster, session);
+          if (resp.result != 0) return resp;
+          for (var i = 0, k = resp.nodes; i < k.length; i++)
+            k[i].nodeGroup == 'sqldb' ? galera_nodes_address += k[i].address + "," : 0;    
+        }
+        galera_nodes_address = galera_nodes_address.slice(0, -1);    
+        return { result : 0, onAfterReturn: { setGlobals: { galera_nodes_address: galera_nodes_address } }};
+
+    - script: |
+        var regions = '${settings.regions}'.split(','),
+            actions = [];
+        for (var cluster = 1, n = regions.length + 1; cluster < n; cluster ++) {
+          actions.push({
+            jps: "https://raw.githubusercontent.com/sych74/wordpress-multiregions/master/scripts/geo_galera.jps?_r=${fn.random}",
+            envName: "${settings.envName}-" + cluster,
+            settings: {
+              path: "https://raw.githubusercontent.com/jelastic-jps/mysql-cluster/v2.0.0",
+              db_user: "${globals.db_user}",
+              db_pass: "${globals.db_pass}",
+              galera_nodes_array: "${globals.galera_nodes_address}"
+            }  
+          });
+        }
+        return { result: 0, onAfterReturn: { install: actions } };
+
+  initGaleraCluster:
+    - api: jelastic.env.control.GetEnvInfo
+      envName: "${settings.envName}-1"
+    - forEach(response.nodes):
+      - if (${@i.ismaster} && '${@i.nodeGroup}' == 'sqldb'):
+        - api: env.control.ExecCmdById
+          envName: "${settings.envName}}-1"
+          nodeId: ${@i.id}
+          userName: root
+          commandList:
+            - command: "/etc/init.d/mysql stop; sleep 5; galera_new_cluster; service httpd restart"
+      - if (!${@i.ismaster} && '${@i.nodeGroup}' == 'sqldb'):
+        - api: env.control.ExecCmdById
+          envName: "${settings.envName}-1"
+          nodeId: ${@i.id}
+          userName: root
+          commandList:
+            - command: "jem service restart"
+
+  startGaleraCluster:
+    - api: jelastic.env.control.GetEnvInfo
+      envName: "${this.envName}"
+    - forEach(response.nodes):
+      - if ('${@i.nodeGroup}' == 'sqldb'):
+        - api: env.control.ExecCmdById
+          envName: "${this.envName}"
+          nodeId: ${@i.id}
+          userName: root
+          commandList:
+            - command: "jem service restart"
+
   mountStorage:
     - script: |
         var regions = '${settings.regions}'.split(','),
