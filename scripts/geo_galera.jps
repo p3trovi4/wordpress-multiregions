@@ -9,12 +9,20 @@ globals:
   db_pass: "${settings.db_pass}"
   cluster_name: geo-galera-cluster
   galera_nodes_array: ${settings.galera_nodes_array}
+  setup_galera_cluster: ${settings.setup_galera_cluster:true}
+  initial_galera_master: ${settings.initial_galera_master:true}
+  initial_galera_slave: ${settings.initial_galera_slave:master}
   galera_conf: "/etc/mysql/conf.d/galera.cnf"
     
 onInstall:
-  - initialSetup
-  - setupInstance
-        
+  - if ('${globals.setup_galera_cluster}' == 'true'):
+    - initialSetup
+    - setupInstance
+ 
+  - if ('${globals.initial_galera_master}' == 'true'): initialGaleraCluster
+  
+  - if ('${globals.initial_galera_slave}' == 'true'): startGaleraCluster  
+    
 actions:
   initialSetup:
     - setupUser:
@@ -38,3 +46,15 @@ actions:
       sed -i "s/wsrep_cluster_name.*/wsrep_cluster_name = ${globals.cluster_name}/" ${globals.galera_conf}
       sed -i "s/wsrep_node_name.*/wsrep_node_name = $(hostname | cut -d'-' -f 1)/" ${globals.galera_conf}
       sed -i "s/wsrep_cluster_address.*/wsrep_cluster_address = gcomm:\/\/${globals.galera_nodes_array}/" ${globals.galera_conf}
+
+  initialGaleraCluster:
+    - cmd[${nodes.sqldb.master.id}]: "/etc/init.d/mysql stop; sleep 5; galera_new_cluster; service httpd restart"
+      user: root
+    - forEach(n:nodes.sqldb):
+        if (!${@n.ismaster}):
+          cmd[${@n.id}]: "jem service restart"
+          user: root
+  
+  startGaleraCluster:
+    - cmd[sqldb]: "jem service restart"
+      user: root

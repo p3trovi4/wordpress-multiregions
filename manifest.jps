@@ -103,6 +103,8 @@ globals:
 onInstall:
   - setGlobals
   - createEnvs
+  - setupGaleraCluster
+  - startGaleraCluster
   
 actions:
 
@@ -124,6 +126,12 @@ actions:
         galera-1: true
         galera-2: false
         galera-3: false
+        initial_galera_master-1: true
+        initial_galera_master-2: false
+        initial_galera_master-3: false
+        initial_galera_slave-1: false
+        initial_galera_slave-2: true
+        initial_galera_slave-3: true
 
   createEnvs:
     - script: |
@@ -154,19 +162,15 @@ actions:
         
   setupGaleraCluster:
     - script: |
-        var galera_nodes_address = "";
+        var galera_nodes_address = "",
+            actions = [];
         for (var cluster = 1, n = regions.length + 1; cluster < n; cluster ++) {
           var resp = jelastic.env.control.GetEnvInfo('${settings.envName}-' + cluster, session);
           if (resp.result != 0) return resp;
           for (var i = 0, k = resp.nodes; i < k.length; i++)
             k[i].nodeGroup == 'sqldb' ? galera_nodes_address += k[i].address + "," : 0;    
         }
-        galera_nodes_address = galera_nodes_address.slice(0, -1);    
-        return { result : 0, onAfterReturn: { setGlobals: { galera_nodes_address: galera_nodes_address } }};
-
-    - script: |
-        var regions = '${settings.regions}'.split(','),
-            actions = [];
+        galera_nodes_address = galera_nodes_address.slice(0, -1);
         for (var cluster = 1, n = regions.length + 1; cluster < n; cluster ++) {
           actions.push({
             jps: "https://raw.githubusercontent.com/sych74/wordpress-multiregions/master/scripts/geo_galera.jps?_r=${fn.random}",
@@ -175,43 +179,34 @@ actions:
               path: "https://raw.githubusercontent.com/jelastic-jps/mysql-cluster/v2.0.0",
               db_user: "${globals.db_user}",
               db_pass: "${globals.db_pass}",
-              galera_nodes_array: "${globals.galera_nodes_address}"
+              setup_galera_cluster: "true,"
+              initial_galera_master: "false",
+              initial_galera_slave: "false",
+              galera_nodes_array: galera_nodes_address
             }  
           });
         }
         return { result: 0, onAfterReturn: { install: actions } };
 
-  initGaleraCluster:
-    - api: jelastic.env.control.GetEnvInfo
-      envName: "${settings.envName}-1"
-    - forEach(response.nodes):
-      - if (${@i.ismaster} && '${@i.nodeGroup}' == 'sqldb'):
-        - api: env.control.ExecCmdById
-          envName: "${settings.envName}}-1"
-          nodeId: ${@i.id}
-          userName: root
-          commandList:
-            - command: "/etc/init.d/mysql stop; sleep 5; galera_new_cluster; service httpd restart"
-      - if (!${@i.ismaster} && '${@i.nodeGroup}' == 'sqldb'):
-        - api: env.control.ExecCmdById
-          envName: "${settings.envName}-1"
-          nodeId: ${@i.id}
-          userName: root
-          commandList:
-            - command: "jem service restart"
-
   startGaleraCluster:
-    - api: jelastic.env.control.GetEnvInfo
-      envName: "${this.envName}"
-    - forEach(response.nodes):
-      - if ('${@i.nodeGroup}' == 'sqldb'):
-        - api: env.control.ExecCmdById
-          envName: "${this.envName}"
-          nodeId: ${@i.id}
-          userName: root
-          commandList:
-            - command: "jem service restart"
-
+    - script: |
+        var actions = [];
+        for (var cluster = 1, n = regions.length + 1; cluster < n; cluster ++) {
+          actions.push({
+            jps: "https://raw.githubusercontent.com/sych74/wordpress-multiregions/master/scripts/geo_galera.jps?_r=${fn.random}",
+            envName: "${settings.envName}-" + cluster,
+            settings: {
+              path: "https://raw.githubusercontent.com/jelastic-jps/mysql-cluster/v2.0.0",
+              db_user: "${globals.db_user}",
+              db_pass: "${globals.db_pass}",
+              setup_galera_cluster: "false,"
+              initial_galera_master: "${globals.initial_galera_master-" + cluster + "}",
+              initial_galera_slave: "${globals.initial_galera_slave-" + cluster + "}"
+            }
+          });
+        }
+        return { result: 0, onAfterReturn: { install: actions } };
+  
   mountStorage:
     - script: |
         var regions = '${settings.regions}'.split(','),
@@ -231,4 +226,3 @@ actions:
           });
         }
         return { result: 0, onAfterReturn: { api: api } };
-   
