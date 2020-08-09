@@ -7,12 +7,15 @@ globals:
   setup_glusterfs_cluster: ${settings.setup_glusterfs_cluster:true}
   initial_glusterfs_master: ${settings.initial_glusterfs_master:false}
   initial_glusterfs_slave: ${settings.initial_glusterfs_slave:false}
+  add_glusterfs_slave: ${settings.add_glusterfs_slave:false}
+  ip_glusterfs_slave: ${settings.ip_glusterfs_slave:false}
   sshPubKey: ${settings.sshPubKey:}
 
 onInstall:
   - if ('${globals.setup_glusterfs_cluster}' == 'true'):  initialGeoGlusterFSCluster
   - if ('${globals.initial_glusterfs_master}' == 'true'): initialMasterGlusterFSCluster
-  - if ('${globals.initial_glusterfs_slave}' == 'true'): initialSlaveGlusterFSCluster  
+  - if ('${globals.initial_glusterfs_slave}' == 'true'): initialSlaveGlusterFSCluster
+  - if ('${globals.add_glusterfs_slave}' == 'true'): addSlaveGlusterFS
     
 actions:
   initialGeoGlusterFSCluster:
@@ -28,3 +31,9 @@ actions:
   initialMasterGlusterFSCluster:
     - cmd[${nodes.storage.master.id}]: |-
         gluster-georep-sshkey generate --no-prefix
+  addSlaveGlusterFS:
+    - cmd[${nodes.storage.master.id}]: |-
+        gluster-georep-sshkey generate --no-prefix
+        gluster volume geo-replication jelastic jelastic@${globals.ip_glusterfs_slave}::jelastic create push-pem
+        gluster volume geo-replication jelastic jelastic@${globals.ip_glusterfs_slave}::jelastic start
+    
