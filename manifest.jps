@@ -103,8 +103,19 @@ globals:
 onInstall:
   - setGlobals
   - createEnvs
+  - script: |
+      return {
+        result:0,
+        regions:'${settings.regions}'.split(',')
+      }  
+  - forEach(response.regions):
+      setCustomGlobals:
+        envName: ${settings.envName}
+        region: ${@i}
+        index: ${@}
   - setupGaleraCluster
   - startGaleraCluster
+  - setupGeoGlusterFS
   
 actions:
 
@@ -123,15 +134,12 @@ actions:
         displayName-1: WP Cluster Master
         displayName-2: WP Cluster Slave 1
         displayName-3: WP Cluster Slave 2
-        galera-1: true
-        galera-2: false
-        galera-3: false
-        initial_galera_master-1: true
-        initial_galera_master-2: false
-        initial_galera_master-3: false
-        initial_galera_slave-1: false
-        initial_galera_slave-2: true
-        initial_galera_slave-3: true
+        initial_master-1: true
+        initial_master-2: false
+        initial_master-3: false
+        initial_slave-1: false
+        initial_slave-2: true
+        initial_slave-3: true
 
   createEnvs:
     - script: |
@@ -150,16 +158,41 @@ actions:
               wp_protect: "${settings.wp_protect}",
               is_install_wp: "false",
               is_db_cluster: "false",
-              is_storage_cluster: "true",
-              galera: "${globals.galera-" + cluster + "}",
-              glusterfs: "true",
+              galera: "${globals.initial_master-" + cluster + "}",
               db_user: "${globals.db_user}",
               db_pass: "${globals.db_pass}"
             }  
           });
         }
         return { result: 0, onAfterReturn: { install: actions } };
-        
+
+  setCustomGlobals:
+    - script: |        
+        var index = parseInt(${this.index}, 10) + 1;
+        var master_id_glusterfs = [], master_ip_glusterfs = [];
+        var resp = jelastic.env.control.GetEnvInfo('${this.envName}-' + index, session);
+        if (resp.result != 0) return resp;
+        for (var i = 0, k = resp.nodes; i < k.length; i++) {
+          if ((k[i].nodeGroup == 'storage') && (k[i].ismaster)) {
+            master_id_glusterfs.push(k[i].id);
+            master_ip_glusterfs.push(k[i].address);
+          }
+        }
+        return {
+          result: 0,
+          onAfterReturn: {
+            setGlobals: {
+              "master_id_glusterfs-1": master_id_glusterfs[0],
+              "master_id_glusterfs-2": master_id_glusterfs[1],
+              "master_id_glusterfs-3": master_id_glusterfs[2],
+              "master_ip_glusterfs-1": master_ip_glusterfs[0],
+              "master_ip_glusterfs-2": master_ip_glusterfs[1],
+              "master_ip_glusterfs-3": master_ip_glusterfs[2]
+
+            }
+          }        
+        }
+
   setupGaleraCluster:
     - script: |
         var regions = '${settings.regions}'.split(','),
@@ -202,30 +235,40 @@ actions:
               db_user: "${globals.db_user}",
               db_pass: "${globals.db_pass}",
               setup_galera_cluster: "false",
-              initial_galera_master: "${globals.initial_galera_master-" + cluster + "}",
-              initial_galera_slave: "${globals.initial_galera_slave-" + cluster + "}"
+              initial_galera_master: "${globals.initial_master-" + cluster + "}",
+              initial_galera_slave: "${globals.initial_slave-" + cluster + "}"
             }  
           });
         }
         return { result: 0, onAfterReturn: { install: actions } };
-  
-  mountStorage:
+
+  setupGeoGlusterFS:
+    - api: env.control.ExecCmdById
+      envName: ${settings.envName}-1
+      nodeId: ${globals.master_id_glusterfs-1}
+      commandList:
+        - command: |-
+            rm -f /root/.ssh/id_rsa*;
+            echo -e "\n"|ssh-keygen -t rsa -N "";
+    - api: env.file.Read
+      path: /root/.ssh/id_rsa.pub
+      envName: ${settings.envName}-1
+      nodeId: ${globals.master_id_glusterfs-1}
+    - setGlobals:
+        sshPubKey: ${response.body}
     - script: |
         var regions = '${settings.regions}'.split(','),
-            api = [];
+            actions = [];
         for (var cluster = 1, n = regions.length + 1; cluster < n; cluster ++) {
-          api.push({
-            method: jelastic.environment.file.AddMountPointByGroup,
+          actions.push({
+            jps: "https://raw.githubusercontent.com/sych74/wordpress-multiregions/master/scripts/geo_glusterfs.jps?_r=${fn.random}",
             envName: "${settings.envName}-" + cluster,
-            params: {
-              nodeGroup: "cp",
-              sourceNodeId: "${nodes.storage.master.id}",
-              sourcePath: "/data",
-              path: "/var/www/webroot/ROOT",
-              sourceAddressType: "NODE_GROUP",
-              protocol: "NFS4"
+            settings: {
+              setup_glusterfs_cluster: "true",
+              sshPubKey: "${globals.sshPubKey}",
+              initial_glusterfs_master: "${globals.initial_master-" + cluster + "}",
+              initial_glusterfs_slave: "${globals.initial_slave-" + cluster + "}"
             }  
           });
         }
-        return { result: 0, onAfterReturn: { api: api } };
-   
+        return { result: 0, onAfterReturn: { install: actions } };
