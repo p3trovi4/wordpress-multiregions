@@ -21,4 +21,4 @@ actions:
         yum install glusterfs-geo-replication -y;
         groupadd geogroup; usermod -a -G geogroup jelastic;
         echo "${globals.sshPubKey}" >> /root/.ssh/authorized_keys;
-    user: root
+      user: root
