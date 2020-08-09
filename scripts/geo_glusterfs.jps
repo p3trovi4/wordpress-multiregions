@@ -4,24 +4,27 @@ name: Geo GlusterFS Cluster
 description: Geo GlusterFS Cluster
 
 globals:
-  glusterfs_nodes_array: ${settings.glusterfs_nodes_array:}
   setup_glusterfs_cluster: ${settings.setup_glusterfs_cluster:true}
   initial_glusterfs_master: ${settings.initial_glusterfs_master:false}
   initial_glusterfs_slave: ${settings.initial_glusterfs_slave:false}
   sshPubKey: ${settings.sshPubKey:}
 
 onInstall:
-  - if ('${globals.setup_glusterfs_cluster}' == 'true'):  SetupGlusterFSCluster
+  - if ('${globals.setup_glusterfs_cluster}' == 'true'):  initialGeoGlusterFSCluster
   - if ('${globals.initial_glusterfs_master}' == 'true'): initialMasterGlusterFSCluster
   - if ('${globals.initial_glusterfs_slave}' == 'true'): initialSlaveGlusterFSCluster  
     
 actions:
-  SetupGlusterFSCluster:
+  initialGeoGlusterFSCluster:
     - cmd[${nodes.storage.master.id}]: |-
         yum install glusterfs-geo-replication -y;
         groupadd geogroup; usermod -a -G geogroup jelastic;
-      user: root
-    - cmd[${nodes.storage.master.id}]: |-
         echo "${globals.sshPubKey}" >> /root/.ssh/authorized_keys;
       user: root
-      
+  initialSlaveGlusterFSCluster:
+    - cmd[${nodes.storage.master.id}]: |-
+        gluster-mountbroker setup /var/mountbroker-root geogroup;
+        gluster-mountbroker add jelastic geoaccount;
+  initialMasterGlusterFSCluster:
+    - cmd[${nodes.storage.master.id}]: |-
+        gluster-georep-sshkey generate --no-prefix
