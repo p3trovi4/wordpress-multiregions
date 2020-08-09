@@ -8,36 +8,17 @@ globals:
   setup_glusterfs_cluster: ${settings.setup_glusterfs_cluster:true}
   initial_glusterfs_master: ${settings.initial_glusterfs_master:true}
   initial_glusterfs_slave: ${settings.initial_glusterfs_slave:true}
+  sshPubKey: ${settings.sshPubKey:}
 
 onInstall:
-  - if ('${globals.setup_glusterfs_cluster}' == 'true'):  initialSetupGlusterFSCluster
-  - if ('${globals.initial_galera_master}' == 'true'): initialMasterGlusterFSCluster
-  - if ('${globals.initial_galera_slave}' == 'true'): initialSlaveGlusterFSCluster  
+  - if ('${globals.setup_glusterfs_cluster}' == 'true'):  SetupGlusterFSCluster
+  - if ('${globals.initial_glusterfs_master}' == 'true'): initialMasterGlusterFSCluster
+  - if ('${globals.initial_glusterfs_slave}' == 'true'): initialSlaveGlusterFSCluster  
     
 actions:
-  initialSetupGlusterFSCluster:
+  SetupGlusterFSCluster:
     - cmd[storage]: |-
         yum install glusterfs-geo-replication -y;
         groupadd geogroup; usermod -a -G geogroup jelastic;
+        echo "${globals.sshPubKey}" >> /root/.ssh/authorized_keys;
     user: root
-
-  setupInstance:
-    cmd[sqldb]: |-
-      sed -i "s/server_id.*/server_id = $(echo '${env.region}' | md5sum | grep -Eo "[[:digit:]]{3}"  | head -n1)/" ${globals.galera_conf}
-      sed -i "s/bind-address.*/bind-address = $(hostname | cut -d'-' -f 1)/" ${globals.galera_conf}
-      sed -i "s/report_host.*/report_host = $(hostname | cut -d'-' -f 1)/" ${globals.galera_conf}
-      sed -i "s/wsrep_cluster_name.*/wsrep_cluster_name = ${globals.cluster_name}/" ${globals.galera_conf}
-      sed -i "s/wsrep_node_name.*/wsrep_node_name = $(hostname | cut -d'-' -f 1)/" ${globals.galera_conf}
-      sed -i "s/wsrep_cluster_address.*/wsrep_cluster_address = gcomm:\/\/${globals.galera_nodes_array}/" ${globals.galera_conf}
-
-  initialGaleraCluster:
-    - cmd[${nodes.sqldb.master.id}]: "/etc/init.d/mysql stop; sleep 5; galera_new_cluster; service httpd restart"
-      user: root
-    - forEach(n:nodes.sqldb):
-        if (!${@n.ismaster}):
-          cmd[${@n.id}]: "jem service restart"
-          user: root
-  
-  startGaleraCluster:
-    - cmd[sqldb]: "jem service restart"
-      user: root
