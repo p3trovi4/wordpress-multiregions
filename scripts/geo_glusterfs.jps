@@ -20,5 +20,8 @@ actions:
     - cmd[${nodes.storage.master.id}]: |-
         yum install glusterfs-geo-replication -y;
         groupadd geogroup; usermod -a -G geogroup jelastic;
+      user: root
+    - cmd[${nodes.storage.master.id}]: |-
         echo "${globals.sshPubKey}" >> /root/.ssh/authorized_keys;
       user: root
+      
