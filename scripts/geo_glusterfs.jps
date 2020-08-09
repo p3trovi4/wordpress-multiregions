@@ -6,8 +6,8 @@ description: Geo GlusterFS Cluster
 globals:
   glusterfs_nodes_array: ${settings.glusterfs_nodes_array:}
   setup_glusterfs_cluster: ${settings.setup_glusterfs_cluster:true}
-  initial_glusterfs_master: ${settings.initial_glusterfs_master:true}
-  initial_glusterfs_slave: ${settings.initial_glusterfs_slave:true}
+  initial_glusterfs_master: ${settings.initial_glusterfs_master:false}
+  initial_glusterfs_slave: ${settings.initial_glusterfs_slave:false}
   sshPubKey: ${settings.sshPubKey:}
 
 onInstall:
@@ -17,7 +17,7 @@ onInstall:
     
 actions:
   SetupGlusterFSCluster:
-    - cmd[storage]: |-
+    - cmd[${nodes.storage.master.id}]: |-
         yum install glusterfs-geo-replication -y;
         groupadd geogroup; usermod -a -G geogroup jelastic;
         echo "${globals.sshPubKey}" >> /root/.ssh/authorized_keys;
