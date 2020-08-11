@@ -18,6 +18,8 @@ onInstall:
   - if ('${globals.setup_galera_cluster}' == 'true'):
     - initialSetup
     - setupInstance
+    - cmd[sqldb]: jem service stop
+      user: root
  
   - if ('${globals.initial_galera_master}' == 'true'): initialGaleraCluster
   
