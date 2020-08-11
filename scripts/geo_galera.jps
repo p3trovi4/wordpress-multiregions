@@ -21,8 +21,8 @@ onInstall:
     - setupInstance
     - forEach(k:nodes.sqldb):
         setupBindAddress:
-          id: ${@n.id}
-          ip: ${@n.address}
+          id: ${@k.id}
+          ip: ${@k.address}
     - cmd[sqldb]: jem service stop
       user: root
  
