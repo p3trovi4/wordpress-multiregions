@@ -5,6 +5,7 @@ description: MariaDB Geo-Galera  Cluster
 
 globals:
   path: "${settings.path}"
+  server_id: "${settings.server_id}"
   db_user: "${settings.db_user}"
   db_pass: "${settings.db_pass}"
   cluster_name: geo-galera-cluster
@@ -18,6 +19,10 @@ onInstall:
   - if ('${globals.setup_galera_cluster}' == 'true'):
     - initialSetup
     - setupInstance
+    - forEach(k:nodes.sqldb):
+        setupBindAddress:
+          id: ${@n.id}
+          ip: ${@n.address}
     - cmd[sqldb]: jem service stop
       user: root
  
@@ -42,12 +47,16 @@ actions:
 
   setupInstance:
     cmd[sqldb]: |-
-      sed -i "s/server_id.*/server_id = $(echo '${env.region}' | md5sum | grep -Eo "[[:digit:]]{3}"  | head -n1)/" ${globals.galera_conf}
+      sed -i "s/server_id.*/server_id = ${globals.server_id}/" ${globals.galera_conf}
       sed -i "s/bind-address.*/bind-address = $(hostname | cut -d'-' -f 1)/" ${globals.galera_conf}
       sed -i "s/report_host.*/report_host = $(hostname | cut -d'-' -f 1)/" ${globals.galera_conf}
       sed -i "s/wsrep_cluster_name.*/wsrep_cluster_name = ${globals.cluster_name}/" ${globals.galera_conf}
       sed -i "s/wsrep_node_name.*/wsrep_node_name = $(hostname | cut -d'-' -f 1)/" ${globals.galera_conf}
       sed -i "s/wsrep_cluster_address.*/wsrep_cluster_address = gcomm:\/\/${globals.galera_nodes_array}/" ${globals.galera_conf}
+
+  setupBindAddress:
+    cmd[${this.id}]: |-
+      sed -i "s/bind-address.*/bind-address = ${this.ip}/" ${globals.galera_conf}
 
   initialGaleraCluster:
     - cmd[${nodes.sqldb.master.id}]: "/etc/init.d/mysql stop; sleep 5; galera_new_cluster; service httpd restart"
