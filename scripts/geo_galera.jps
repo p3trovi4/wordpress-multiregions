@@ -48,7 +48,6 @@ actions:
   setupInstance:
     cmd[sqldb]: |-
       sed -i "s/server_id.*/server_id = ${globals.server_id}/" ${globals.galera_conf}
-      sed -i "s/bind-address.*/bind-address = $(hostname | cut -d'-' -f 1)/" ${globals.galera_conf}
       sed -i "s/report_host.*/report_host = $(hostname | cut -d'-' -f 1)/" ${globals.galera_conf}
       sed -i "s/wsrep_cluster_name.*/wsrep_cluster_name = ${globals.cluster_name}/" ${globals.galera_conf}
       sed -i "s/wsrep_node_name.*/wsrep_node_name = $(hostname | cut -d'-' -f 1)/" ${globals.galera_conf}
