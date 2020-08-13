@@ -4,13 +4,13 @@ name: Geo GlusterFS Cluster
 description: Geo GlusterFS Cluster
 
 globals:
-  setup_glusterfs_cluster: ${settings.setup_glusterfs_cluster:true}
+  setup_glusterfs_cluster: ${settings.setup_glusterfs_cluster:false}
   initial_glusterfs_master: ${settings.initial_glusterfs_master:false}
   initial_glusterfs_slave: ${settings.initial_glusterfs_slave:false}
   add_glusterfs_slave: ${settings.add_glusterfs_slave:false}
   ip_glusterfs_slave: ${settings.ip_glusterfs_slave:false}
   sshPubKey: ${settings.sshPubKey:false}
-  commonPubKey: ${settings.sshPubKey:false}
+  commonPubKey: ${settings.commonPubKey:false}
 
 onInstall:
   - if ('${globals.setup_glusterfs_cluster}' == 'true'):  initialGeoGlusterFSCluster
@@ -33,6 +33,7 @@ actions:
   initialMasterGlusterFSCluster:
     - cmd[${nodes.storage.master.id}]: |-
         gluster system:: exec gsec_create
+  
   addCommonPubKey:
     - cmd[storage]: |-
         echo "${globals.commonPubKey}" >> /root/.ssh/authorized_keys;
