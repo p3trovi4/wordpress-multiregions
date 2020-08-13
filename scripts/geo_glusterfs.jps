@@ -9,7 +9,6 @@ globals:
   initial_glusterfs_slave: ${settings.initial_glusterfs_slave:false}
   add_glusterfs_slave: ${settings.add_glusterfs_slave:false}
   ip_glusterfs_slave: ${settings.ip_glusterfs_slave:false}
-  sshPubKey: ${settings.sshPubKey:}
 
 onInstall:
   - if ('${globals.setup_glusterfs_cluster}' == 'true'):  initialGeoGlusterFSCluster
@@ -22,7 +21,6 @@ actions:
     - cmd[storage]: |-
         yum install glusterfs-geo-replication -y;
         groupadd geogroup; usermod -a -G geogroup jelastic;
-        echo "${globals.sshPubKey}" >> /root/.ssh/authorized_keys;
       user: root
   initialSlaveGlusterFSCluster:
     - cmd[${nodes.storage.master.id}]: |-
@@ -30,10 +28,9 @@ actions:
         gluster-mountbroker add jelastic geoaccount;
   initialMasterGlusterFSCluster:
     - cmd[${nodes.storage.master.id}]: |-
-        gluster-georep-sshkey generate --no-prefix
+        gluster system:: exec gsec_create
   addSlaveGlusterFS:
     - cmd[${nodes.storage.master.id}]: |-
-        gluster-georep-sshkey generate --no-prefix
-        gluster volume geo-replication jelastic jelastic@${globals.ip_glusterfs_slave}::jelastic create push-pem
+        gluster volume geo-replication jelastic jelastic@${globals.ip_glusterfs_slave}::jelastic create push-pem force
         gluster volume geo-replication jelastic jelastic@${globals.ip_glusterfs_slave}::jelastic start
     
