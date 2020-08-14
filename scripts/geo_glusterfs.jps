@@ -7,7 +7,6 @@ globals:
   setup_glusterfs_cluster: ${settings.setup_glusterfs_cluster:false}
   initial_glusterfs_master: ${settings.initial_glusterfs_master:false}
   initial_glusterfs_slave: ${settings.initial_glusterfs_slave:false}
-  add_glusterfs_slave: ${settings.add_glusterfs_slave:false}
   glusterfs_slaves_address: ${settings.glusterfs_slaves_address:false}
   addCommonPubKey: ${settings.addCommonPubKey:false}
 
@@ -15,9 +14,11 @@ onInstall:
   - if ('${globals.setup_glusterfs_cluster}' == 'true'):  initialGeoGlusterFSCluster
   - if ('${globals.initial_glusterfs_master}' == 'true'): initialMasterGlusterFSCluster
   - if ('${globals.initial_glusterfs_slave}' == 'true'): initialSlaveGlusterFSCluster
-  - if ('${globals.add_glusterfs_slave}' == 'true'): addSlaveGlusterFS
   - if ('${globals.addCommonPubKey}' == 'true'): addCommonPubKey
-  - if ('${globals.glusterfs_slaves_address}' != 'false'): addSlaveGlusterFS
+  - if ('${globals.glusterfs_slaves_address}' != 'false'): 
+      forEach (slave:globals.glusterfs_slaves_address):  
+        addSlaveGlusterFS:
+          slave: ${@slave}
     
 actions:
   initialGeoGlusterFSCluster:
@@ -39,8 +40,8 @@ actions:
         echo "${settings.commonPubKey}" >> /root/.ssh/authorized_keys;
   
   addSlaveGlusterFS:
-    forEach (slave:globals.glusterfs_slaves_address):  
+      log: ----- ${this.slave}
       cmd[${nodes.storage.master.id}]: |-
-        gluster volume geo-replication jelastic jelastic@${@slave}::jelastic create push-pem force
-        gluster volume geo-replication jelastic jelastic@${@slave}::jelastic start
+        gluster volume geo-replication jelastic jelastic@${this.slave}::jelastic create push-pem force
+        gluster volume geo-replication jelastic jelastic@${this.slave}::jelastic start
     
