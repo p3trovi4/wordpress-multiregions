@@ -106,6 +106,7 @@ onInstall:
   - createEnvs
   - setCustomGlobals
   - setupGeoGlusterFS
+  - log:  ------ ${globals.glusterfs_slaves_address}
   
 actions:
 
@@ -160,6 +161,7 @@ actions:
     - script: |
         var regions = '${settings.regions}'.split(','),
             galera_nodes_address = "",
+            glusterfs_slaves_address = [],
             onAfterReturn = { setGlobals: {} };
         for (var cluster = 1, n = regions.length + 1; cluster < n; cluster ++) {
           var resp = jelastic.env.control.GetEnvInfo('${settings.envName}-' + cluster, session);
@@ -168,6 +170,8 @@ actions:
             if ((k[i].nodeGroup == 'storage') && (k[i].ismaster)) {
               onAfterReturn.setGlobals["master_id_glusterfs-" + cluster] = k[i].id;
               onAfterReturn.setGlobals["master_ip_glusterfs-" + cluster] = k[i].address;
+              if (cluster > 1)
+                glusterfs_slaves_address.push(k[i].address);
             }
             if (k[i].nodeGroup == 'sqldb') {
               galera_nodes_address += k[i].address + ",";
@@ -177,6 +181,7 @@ actions:
         }
         galera_nodes_address = galera_nodes_address.slice(0, -1);
         onAfterReturn.setGlobals["galera_nodes_address"] = galera_nodes_address;
+        onAfterReturn.setGlobals["glusterfs_slaves_address"] = glusterfs_slaves_address;
         return { result: 0, onAfterReturn: onAfterReturn };
 
   setupGaleraCluster:
@@ -214,8 +219,9 @@ actions:
       envName: ${settings.envName}-1
       nodeId: ${globals.master_id_glusterfs-1}
     - setGlobals:
-        sshPubKey: ${response.body}  
-    - script: |
+        sshPubKey: ${response.body}
+    - sshPubKey: ${response.body}
+      script: |
         var regions = '${settings.regions}'.split(','),
             actions = [];
         for (var cluster = 1, n = regions.length + 1; cluster < n; cluster ++) {
@@ -224,7 +230,7 @@ actions:
             envName: "${settings.envName}-" + cluster,
             settings: {
               setup_glusterfs_cluster: "true",
-              sshPubKey: "${globals.sshPubKey}",
+              sshPubKey: sshPubKey,
               initial_glusterfs_master: "${globals.initial_master-" + cluster + "}",
               initial_glusterfs_slave: "${globals.initial_slave-" + cluster + "}"
             }  
@@ -236,9 +242,9 @@ actions:
       path: /var/lib/glusterd/geo-replication/common_secret.pem.pub
       envName: ${settings.envName}-1
       nodeId: ${globals.master_id_glusterfs-1}
-    - setGlobals:
-        commonPubKey: ${response.body}
-    - script: |
+  
+    - commonPubKey: ${response.body}
+      script: |
         var regions = '${settings.regions}'.split(','),
             actions = [];
         for (var cluster = 1, n = regions.length + 1; cluster < n; cluster ++) {
@@ -246,7 +252,8 @@ actions:
             jps: "https://raw.githubusercontent.com/sych74/wordpress-multiregions/master/scripts/geo_glusterfs.jps?_r=${fn.random}",
             envName: "${settings.envName}-" + cluster,
             settings: {
-              commonPubKey: "${globals.commonPubKey}"
+              addCommonPubKey: "true",
+              commonPubKey: commonPubKey
             }  
           });
         }
