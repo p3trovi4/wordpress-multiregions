@@ -260,3 +260,7 @@ actions:
         envName: ${settings.envName}-1
         settings: 
           glusterfs_slaves_address: ${globals.glusterfs_slaves_address}
+          
+    - forEach (slave:globals.glusterfs_slaves_address):  
+       log: ----- ${@slave}
+
