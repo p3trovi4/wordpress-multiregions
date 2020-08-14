@@ -166,8 +166,12 @@ actions:
           var resp = jelastic.env.control.GetEnvInfo('${settings.envName}-' + cluster, session);
           if (resp.result != 0) return resp;
           for (var i = 0, k = resp.nodes; i < k.length; i++) {
-            if ((k[i].nodeGroup == 'storage') && (k[i].ismaster) && (cluster > 1))
-              glusterfs_slaves_address.push(k[i].address);
+           if ((k[i].nodeGroup == 'storage') && (k[i].ismaster)) {
+              onAfterReturn.setGlobals["master_id_glusterfs-" + cluster] = k[i].id;
+              onAfterReturn.setGlobals["master_ip_glusterfs-" + cluster] = k[i].address;
+              if (cluster > 1)
+                glusterfs_slaves_address.push(k[i].address);
+            }
             if (k[i].nodeGroup == 'sqldb') {
               galera_nodes_address += k[i].address + ",";
               k[i].ismaster ? onAfterReturn.setGlobals["master_id_galera-" + cluster] = k[i].id : 0;
