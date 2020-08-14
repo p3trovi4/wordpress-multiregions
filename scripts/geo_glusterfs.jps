@@ -35,6 +35,7 @@ actions:
         gluster system:: exec gsec_create
   
   addCommonPubKey:
+    - log: -------     ${globals.commonPubKey}
     - cmd[storage]: |-
         echo "${globals.commonPubKey}" >> /tmp/test;
   
