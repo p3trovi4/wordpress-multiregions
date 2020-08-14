@@ -8,7 +8,7 @@ globals:
   initial_glusterfs_master: ${settings.initial_glusterfs_master:false}
   initial_glusterfs_slave: ${settings.initial_glusterfs_slave:false}
   add_glusterfs_slave: ${settings.add_glusterfs_slave:false}
-  ip_glusterfs_slave: ${settings.ip_glusterfs_slave:false}
+  glusterfs_slaves_address: ${settings.glusterfs_slaves_address:false}
   addCommonPubKey: ${settings.addCommonPubKey:false}
 
 onInstall:
@@ -17,6 +17,7 @@ onInstall:
   - if ('${globals.initial_glusterfs_slave}' == 'true'): initialSlaveGlusterFSCluster
   - if ('${globals.add_glusterfs_slave}' == 'true'): addSlaveGlusterFS
   - if ('${globals.addCommonPubKey}' == 'true'): addCommonPubKey
+  - if ('${globals.glusterfs_slaves_address}' != 'false'): addSlaveGlusterFS
     
 actions:
   initialGeoGlusterFSCluster:
@@ -38,7 +39,8 @@ actions:
         echo "${settings.commonPubKey}" >> /root/.ssh/authorized_keys;
   
   addSlaveGlusterFS:
-    - cmd[${nodes.storage.master.id}]: |-
-        gluster volume geo-replication jelastic jelastic@${globals.ip_glusterfs_slave}::jelastic create push-pem force
-        gluster volume geo-replication jelastic jelastic@${globals.ip_glusterfs_slave}::jelastic start
+    forEach (slave:globals.glusterfs_slaves_address):  
+      cmd[${nodes.storage.master.id}]: |-
+        gluster volume geo-replication jelastic jelastic@${@slave}::jelastic create push-pem force
+        gluster volume geo-replication jelastic jelastic@${@slave}::jelastic start
     
