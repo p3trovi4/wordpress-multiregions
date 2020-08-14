@@ -137,7 +137,7 @@ actions:
             actions = [];
         for (var cluster = 1, n = regions.length + 1; cluster < n; cluster ++) {
           actions.push({
-            jps: "https://raw.githubusercontent.com/sych74/test/master/storage.jps?_r=${fn.random}",
+            jps: "https://raw.githubusercontent.com/sych74/wordpress-cluster/v3.0.0/manifest.jps?_r=${fn.random}",
             envName: "${settings.envName}-" + cluster,
             loggerName: "${settings.envName}-" + cluster,
             envGroups: "${globals.envGroups}",
@@ -148,6 +148,7 @@ actions:
               wp_protect: "${settings.wp_protect}",
               is_install_wp: "false",
               is_db_cluster: "false",
+              glusterfs: "true",
               galera: "${globals.initial_master-" + cluster + "}",
               db_user: "${globals.db_user}",
               db_pass: "${globals.db_pass}"
@@ -261,6 +262,3 @@ actions:
         settings: 
           glusterfs_slaves_address: ${globals.glusterfs_slaves_address}
           
-    - forEach (slave:globals.glusterfs_slaves_address):  
-       log: ----- ${@slave}
-
