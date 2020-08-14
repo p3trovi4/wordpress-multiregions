@@ -255,8 +255,8 @@ actions:
         }
         return { result: 0, onAfterReturn: { install: actions } };
         
-    - install:
-      jps: https://raw.githubusercontent.com/sych74/wordpress-multiregions/master/scripts/geo_glusterfs.jps?_r=${fn.random}
-      envName: ${settings.envName}-1
-      settings: 
-        glusterfs_slaves_address: ${globals.glusterfs_slaves_address}
+    - install: 
+        jps: https://raw.githubusercontent.com/sych74/wordpress-multiregions/master/scripts/geo_glusterfs.jps?_r=${fn.random}
+        envName: ${settings.envName}-1
+        settings: 
+          glusterfs_slaves_address: ${globals.glusterfs_slaves_address}
