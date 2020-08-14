@@ -91,6 +91,7 @@ settings:
       disabled: false
       
 globals:
+  wp_cluster_url: https://raw.githubusercontent.com/sych74/wordpress-cluster/v3.0.0
   galera_server_id: ${fn.random}
   db_user: jelastic-${fn.random}
   db_pass: ${fn.password(10)}
