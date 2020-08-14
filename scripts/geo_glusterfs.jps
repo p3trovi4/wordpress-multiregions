@@ -9,22 +9,21 @@ globals:
   initial_glusterfs_slave: ${settings.initial_glusterfs_slave:false}
   add_glusterfs_slave: ${settings.add_glusterfs_slave:false}
   ip_glusterfs_slave: ${settings.ip_glusterfs_slave:false}
-  sshPubKey: ${settings.sshPubKey:false}
-  commonPubKey: ${settings.commonPubKey:false}
+  addCommonPubKey: ${settings.addCommonPubKey:false}
 
 onInstall:
   - if ('${globals.setup_glusterfs_cluster}' == 'true'):  initialGeoGlusterFSCluster
   - if ('${globals.initial_glusterfs_master}' == 'true'): initialMasterGlusterFSCluster
   - if ('${globals.initial_glusterfs_slave}' == 'true'): initialSlaveGlusterFSCluster
   - if ('${globals.add_glusterfs_slave}' == 'true'): addSlaveGlusterFS
-  - if ('${globals.commonPubKey}' != 'false'): addCommonPubKey
+  - if ('${globals.addCommonPubKey}' == 'true'): addCommonPubKey
     
 actions:
   initialGeoGlusterFSCluster:
     - cmd[storage]: |-
         yum install glusterfs-geo-replication -y;
         groupadd geogroup; usermod -a -G geogroup jelastic;
-        echo "${globals.sshPubKey}" >> /root/.ssh/authorized_keys;
+        echo "${settings.sshPubKey}" >> /root/.ssh/authorized_keys;
       user: root
   initialSlaveGlusterFSCluster:
     - cmd[${nodes.storage.master.id}]: |-
@@ -35,9 +34,8 @@ actions:
         gluster system:: exec gsec_create
   
   addCommonPubKey:
-    - log: -------     ${settings.commonPubKey}
     - cmd[storage]: |-
-        echo "${settings.commonPubKey}" >> /tmp/test;
+        echo "${settings.commonPubKey}" >> /root/.ssh/authorized_keys;
   
   addSlaveGlusterFS:
     - cmd[${nodes.storage.master.id}]: |-
