@@ -106,7 +106,6 @@ onInstall:
   - createEnvs
   - setCustomGlobals
   - setupGeoGlusterFS
-  - log:  ------ ${globals.glusterfs_slaves_address}
   
 actions:
 
@@ -167,12 +166,8 @@ actions:
           var resp = jelastic.env.control.GetEnvInfo('${settings.envName}-' + cluster, session);
           if (resp.result != 0) return resp;
           for (var i = 0, k = resp.nodes; i < k.length; i++) {
-            if ((k[i].nodeGroup == 'storage') && (k[i].ismaster)) {
-              onAfterReturn.setGlobals["master_id_glusterfs-" + cluster] = k[i].id;
-              onAfterReturn.setGlobals["master_ip_glusterfs-" + cluster] = k[i].address;
-              if (cluster > 1)
-                glusterfs_slaves_address.push(k[i].address);
-            }
+            if ((k[i].nodeGroup == 'storage') && (k[i].ismaster) && (cluster > 1))
+              glusterfs_slaves_address.push(k[i].address);
             if (k[i].nodeGroup == 'sqldb') {
               galera_nodes_address += k[i].address + ",";
               k[i].ismaster ? onAfterReturn.setGlobals["master_id_galera-" + cluster] = k[i].id : 0;
@@ -218,8 +213,6 @@ actions:
       path: /root/.ssh/id_rsa.pub
       envName: ${settings.envName}-1
       nodeId: ${globals.master_id_glusterfs-1}
-    - setGlobals:
-        sshPubKey: ${response.body}
     - sshPubKey: ${response.body}
       script: |
         var regions = '${settings.regions}'.split(','),
@@ -241,8 +234,7 @@ actions:
     - api: env.file.Read
       path: /var/lib/glusterd/geo-replication/common_secret.pem.pub
       envName: ${settings.envName}-1
-      nodeId: ${globals.master_id_glusterfs-1}
-  
+      nodeId: ${globals.master_id_glusterfs-1} 
     - commonPubKey: ${response.body}
       script: |
         var regions = '${settings.regions}'.split(','),
@@ -258,3 +250,9 @@ actions:
           });
         }
         return { result: 0, onAfterReturn: { install: actions } };
+        
+    - install:
+      jps: https://raw.githubusercontent.com/sych74/wordpress-multiregions/master/scripts/geo_glusterfs.jps?_r=${fn.random}
+      envName: ${settings.envName}-1
+      settings: 
+        glusterfs_slaves_address: ${globals.glusterfs_slaves_address}
