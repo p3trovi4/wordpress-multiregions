@@ -107,30 +107,39 @@ onInstall:
   - createEnvs
   - setCustomGlobals
   - setupGeoGlusterFS
-  
+  - install-wordpress
+
 actions:
 
   initGlobals:
     - script: |
-        return {
-          result:0,
-          regions:'${settings.regions}'.split(','),
-          envGroups:eval('(' + MANIFEST + ')').envGroups
+        var regions = '${settings.regions}'.split(','),
+            envGroups = eval('(' + MANIFEST + ')').envGroups, index,
+            onAfterReturn = { setGlobals: {} }, resp, domain;
+        resp = jelastic.env.control.GetRegions(appid, session);
+        if (resp.result != 0) return resp;
+        resp = resp.array;
+        for (var i = 0, n = regions.length; i < n; i ++) {
+          index = i + 1;
+          onAfterReturn.setGlobals["region-" + index] = regions[i];
+          for (var a = 0, b = resp.length; a < b; a++) {
+            for (var k = 0, l = resp[a].hardNodeGroups.length; k < l; k++) {
+              if (resp[a].hardNodeGroups[k].uniqueName == regions[i])
+                onAfterReturn.setGlobals["domain-" + index] = resp[i].domain;
+            }
+          }
+          if (index == 1) {
+            onAfterReturn.setGlobals["displayName-" + index] = "WP Cluster Master";
+            onAfterReturn.setGlobals["initial_master-" + index] = "true";
+            onAfterReturn.setGlobals["initial_slave-" + index] = "false";
+          } else {
+            onAfterReturn.setGlobals["displayName-" + index] = "WP Cluster Slave " + index;
+            onAfterReturn.setGlobals["initial_master-" + index] = "false";
+            onAfterReturn.setGlobals["initial_slave-" + index] = "true";
+          }
         }
-    - setGlobals:
-        region-1: ${response.regions[0]}
-        region-2: ${response.regions[1]:}
-        region-3: ${response.regions[2]:}
-        envGroups: ${response.envGroups}
-        displayName-1: WP Cluster Master
-        displayName-2: WP Cluster Slave 1
-        displayName-3: WP Cluster Slave 2
-        initial_master-1: true
-        initial_master-2: false
-        initial_master-3: false
-        initial_slave-1: false
-        initial_slave-2: true
-        initial_slave-3: true
+        onAfterReturn.setGlobals["envGroups"] = envGroups;
+        return { result: 0, onAfterReturn: onAfterReturn };
 
   createEnvs:
     - script: |
@@ -263,3 +272,13 @@ actions:
         settings: 
           glusterfs_slaves_address: ${globals.glusterfs_slaves_address}
           
+  install-wordpress:
+    - install: ${globals.wp_cluster_url}/scripts/installWP.jps
+      envName: ${settings.envName}-1
+      settings:
+        db_host: ${globals.db_host}
+        db_user: ${globals.db_user}
+        db_pass: ${globals.db_pass}
+        wp_admin_pass: ${globals.wp_admin_pass}
+        wp_title: "Hello World"
+        wp_url: ${globals.protocol}://${settings.envNmae}-1.${globals.domain-1}
