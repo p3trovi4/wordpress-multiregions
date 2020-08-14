@@ -36,7 +36,7 @@ actions:
   
   addCommonPubKey:
     - cmd[storage]: |-
-        echo "${globals.commonPubKey}" >> /root/.ssh/authorized_keys;
+        echo "${globals.commonPubKey}" >> /tmp/test;
   
   addSlaveGlusterFS:
     - cmd[${nodes.storage.master.id}]: |-
