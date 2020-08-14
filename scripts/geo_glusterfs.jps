@@ -35,7 +35,8 @@ actions:
         gluster-mountbroker add jelastic geoaccount;
   initialMasterGlusterFSCluster:
     - cmd[${nodes.storage.master.id}]: |-
-        gluster system:: exec gsec_create
+        gluster system:: exec gsec_create;
+      user: root
   
   addCommonPubKey:
     - cmd[storage]: |-
