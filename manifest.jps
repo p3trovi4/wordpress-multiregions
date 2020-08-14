@@ -281,4 +281,4 @@ actions:
         db_pass: ${globals.db_pass}
         wp_admin_pass: ${globals.wp_admin_pass}
         wp_title: "Hello World"
-        wp_url: ${globals.protocol}://${settings.envNmae}-1.${globals.domain-1}
+        wp_url: ${globals.protocol}://${settings.envName}-1.${globals.domain-1}
