@@ -238,5 +238,16 @@ actions:
       nodeId: ${globals.master_id_glusterfs-1}
     - setGlobals:
         commonPubKey: ${response.body}
-
- 
+    - script: |
+        var regions = '${settings.regions}'.split(','),
+            actions = [];
+        for (var cluster = 1, n = regions.length + 1; cluster < n; cluster ++) {
+          actions.push({
+            jps: "https://raw.githubusercontent.com/sych74/wordpress-multiregions/master/scripts/geo_glusterfs.jps?_r=${fn.random}",
+            envName: "${settings.envName}-" + cluster,
+            settings: {
+              commonPubKey: "${globals.commonPubKey}"
+            }  
+          });
+        }
+        return { result: 0, onAfterReturn: { install: actions } };
