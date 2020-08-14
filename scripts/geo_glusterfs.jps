@@ -35,9 +35,9 @@ actions:
         gluster system:: exec gsec_create
   
   addCommonPubKey:
-    - log: -------     ${globals.commonPubKey}
+    - log: -------     ${settings.commonPubKey}
     - cmd[storage]: |-
-        echo "${globals.commonPubKey}" >> /tmp/test;
+        echo "${settings.commonPubKey}" >> /tmp/test;
   
   addSlaveGlusterFS:
     - cmd[${nodes.storage.master.id}]: |-
