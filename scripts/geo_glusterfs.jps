@@ -40,7 +40,7 @@ actions:
   
   addCommonPubKey:
     - cmd[storage]: |-
-        echo "${settings.commonPubKey}" >> /root/.ssh/authorized_keys;
+        echo '${settings.commonPubKey}' >> /root/.ssh/authorized_keys;
   
   addSlaveGlusterFS:
     - log: ----- ${this.slave}
