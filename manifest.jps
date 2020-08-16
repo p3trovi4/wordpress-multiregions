@@ -106,6 +106,7 @@ onInstall:
   - initGlobals
   - createEnvs
   - setCustomGlobals
+  - setupGaleraCluster
   - setupGeoGlusterFS
   - install-wordpress
 
