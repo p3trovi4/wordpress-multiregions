@@ -71,24 +71,6 @@ settings:
       value: true
       disabled: false
       tooltip: "Protect web sites with <a href='https://www.litespeedtech.com/support/wiki/doku.php/litespeed_wiki:waf'>LiteSpeed built-in WAF</a> based on Free ModSecurity Rules from Comodo"
-             
-    - caption: Install Let's Encrypt SSL with Auto-Renewal
-      type: checkbox
-      name: le-addon
-      value: false
-      disabled: true
-
-    - caption: Install Lightning-Fast Premium CDN with 130+ PoPs
-      type: checkbox
-      name: cdn-addon
-      value: true
-      disabled: false
-
-    - caption: Install WordPress Multisite Network
-      type: checkbox
-      name: mu-addon
-      value: false
-      disabled: false
       
 globals:
   wp_cluster_url: https://raw.githubusercontent.com/sych74/wordpress-cluster/v3.0.0
