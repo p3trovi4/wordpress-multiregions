@@ -16,11 +16,8 @@ onInstall:
   - if ('${globals.initial_glusterfs_slave}' == 'true'): initialSlaveGlusterFSCluster
   - if ('${globals.addCommonPubKey}' == 'true'): addCommonPubKey
   - if ('${globals.glusterfs_slaves_address}' != 'false'):
-    - script: |
-        return { result : 0, onAfterReturn: { setGlobals: { glusterfs_slaves_address: "${globals.glusterfs_slaves_address}".split(",") } }};
-    - forEach (slave:globals.glusterfs_slaves_address):  
-        - addSlaveGlusterFS:
-            slave: ${@slave}
+      - addSlaveGlusterFS:
+          slave: ${globals.glusterfs_slaves_address}
     
 actions:
   initialGeoGlusterFSCluster:
@@ -43,7 +40,6 @@ actions:
         echo '${settings.commonPubKey}' >> /root/.ssh/authorized_keys;
   
   addSlaveGlusterFS:
-    - log: ----- ${this.slave}
     - cmd[${nodes.storage.master.id}]: |-
         gluster volume geo-replication jelastic jelastic@${this.slave}::jelastic create push-pem force
         gluster volume geo-replication jelastic jelastic@${this.slave}::jelastic start
