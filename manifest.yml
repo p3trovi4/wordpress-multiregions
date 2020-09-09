@@ -97,18 +97,20 @@ globals:
   success: success
   email: default
 
+
+
 onInstall:
   - initGlobals
   - createEnvs
   - setCustomGlobals
-  - 
+  - installDummyAddons
   - if (${settings.le-addon:false:false} || ${settings.cdn-addon:false}):
     - script: |
         var actions = [];
         if (${settings.le-addon:false})
           actions.push({
             jps: "https://github.com/jelastic-jps/lets-encrypt/blob/master/manifest.jps?_r=${fn.random}?_r=${fn.random}",
-            envName: "${globals.envName}-1",
+            envName: "${settings.envName}-1",
             nodeGroup: "cp",
             skipEmail: "true",
             settings: {
@@ -119,7 +121,7 @@ onInstall:
         if (${settings.cdn-addon:false})
           actions.push({
             jps: "https://raw.githubusercontent.com/edgeport/cdn/master/manifest.yml?_r=${fn.random}",
-            envName: "${globals.envName}-1",
+            envName: "${settings.envName}-1",
             nodeGroup: "bl",
             skipEmail: "true",
             settings: {
@@ -127,11 +129,7 @@ onInstall:
             }
           });
         return { result: 0, onAfterReturn: { install: actions } };
-        
-  - if (${settings.le-addon:false}): 
-      - shareCertificates
-
-  
+          
 actions:
 
   initGlobals:
@@ -162,6 +160,7 @@ actions:
           }
         }
         onAfterReturn.setGlobals["envGroups"] = envGroups;
+        onAfterReturn.setGlobals["regionsCount"] = regions.length;
         return { result: 0, onAfterReturn: onAfterReturn };
 
   createEnvs:
@@ -302,39 +301,27 @@ actions:
     script: |
       var regions = '${settings.regions}'.split(','),
           actions = [];
+      actions.push({
+          jps: "${baseUrl}/scripts/multiregionSSLmanager.jps?_r=${fn.random}",
+          envName: "${settings.envName}-1",
+          settings: {
+            regionsCount: "${globals.regionsCount}",
+            envName: "${settings.envName}"
+          }
+        });
       for (var cluster = 2, n = regions.length + 1; cluster < n; cluster ++) {
         actions.push({
           jps: "${baseUrl}/scripts/dummyLE.jps?_r=${fn.random}",
-          envName: "${globals.envName}-" + cluster,
+          envName: "${settings.envName}-" + cluster,
           nodeGroup: "bl"
         });
         actions.push({
           jps: "${baseUrl}/scripts/dummyCDN.jps?_r=${fn.random}",
-          envName: "${globals.envName}-" + cluster,
+          envName: "${settings.envName}-" + cluster,
           nodeGroup: "bl"
         });
       }
       return { result: 0, onAfterReturn: { install: actions } };
-
-  shareCertificates:
-    - api: env.file.Read
-      path:  /var/lib/jelastic/SSL/customssl.conf
-      envName: ${settings.envName}-1
-      nodeId: ${globals.master_id_bl-1} 
-    - customSSLconf: ${response.body}
-      script: |
-        var regions = '${settings.regions}'.split(','),
-            actions = [];
-        for (var cluster = 2, n = regions.length + 1; cluster < n; cluster ++) {
-          actions.push({
-            jps: "https://raw.githubusercontent.com/sych74/wordpress-multiregions/master/scripts/shareSSL.jps?_r=${fn.random}",
-            envName: "${settings.envName}-" + cluster,
-            settings: {
-              customSSLconf: customSSLconf
-            }  
-          });
-        }
-        return { result: 0, onAfterReturn: { install: actions } };
 
   install-wordpress:
     - install: ${globals.wp_cluster_url}/scripts/installWP.jps
