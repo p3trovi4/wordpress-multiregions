@@ -71,7 +71,20 @@ settings:
       value: true
       disabled: false
       tooltip: "Protect web sites with <a href='https://www.litespeedtech.com/support/wiki/doku.php/litespeed_wiki:waf'>LiteSpeed built-in WAF</a> based on Free ModSecurity Rules from Comodo"
-      
+
+    - caption: Install Let's Encrypt SSL with Auto-Renewal
+      type: checkbox
+      name: le-addon
+      value: true
+      disabled: false
+
+    - caption: Install Lightning-Fast Premium CDN with 130+ PoPs
+      type: checkbox
+      name: cdn-addon
+      value: true
+      disabled: false
+
+
 globals:
   wp_cluster_url: https://raw.githubusercontent.com/sych74/wordpress-cluster/v3.0.0
   galera_server_id: ${fn.random}
@@ -88,10 +101,37 @@ onInstall:
   - initGlobals
   - createEnvs
   - setCustomGlobals
-  - setupGaleraCluster
-  - setupGeoGlusterFS
-  - install-wordpress
+  - 
+  - if (${settings.le-addon:false:false} || ${settings.cdn-addon:false}):
+    - script: |
+        var actions = [];
+        if (${settings.le-addon:false})
+          actions.push({
+            jps: "https://github.com/jelastic-jps/lets-encrypt/blob/master/manifest.jps?_r=${fn.random}?_r=${fn.random}",
+            envName: "${globals.envName}-1",
+            nodeGroup: "cp",
+            skipEmail: "true",
+            settings: {
+              webroot: "true",
+              webroot_path: "/var/www/webroot/ROOT"
+            }
+          });
+        if (${settings.cdn-addon:false})
+          actions.push({
+            jps: "https://raw.githubusercontent.com/edgeport/cdn/master/manifest.yml?_r=${fn.random}",
+            envName: "${globals.envName}-1",
+            nodeGroup: "bl",
+            skipEmail: "true",
+            settings: {
+              note: "${settings.noteCDN:}"
+            }
+          });
+        return { result: 0, onAfterReturn: { install: actions } };
+        
+  - if (${settings.le-addon:false}): 
+      - shareCertificates
 
+  
 actions:
 
   initGlobals:
@@ -130,7 +170,7 @@ actions:
             actions = [];
         for (var cluster = 1, n = regions.length + 1; cluster < n; cluster ++) {
           actions.push({
-            jps: "https://raw.githubusercontent.com/sych74/wordpress-cluster/v3.0.0/manifest.jps?_r=${fn.random}",
+            jps: "https://raw.githubusercontent.com/sych74/test/master/storage.jps?_r=${fn.random}",
             envName: "${settings.envName}-" + cluster,
             loggerName: "${settings.envName}-" + cluster,
             envGroups: "${globals.envGroups}",
@@ -170,6 +210,8 @@ actions:
               galera_nodes_address += k[i].address + ",";
               k[i].ismaster ? onAfterReturn.setGlobals["master_id_galera-" + cluster] = k[i].id : 0;
             }
+            if (k[i].nodeGroup == 'bl') 
+              k[i].ismaster ? onAfterReturn.setGlobals["master_id_bl-" + cluster] = k[i].id : 0;
           }
         }
         galera_nodes_address = galera_nodes_address.slice(0, -1);
@@ -255,7 +297,45 @@ actions:
           envName: ${settings.envName}-1
           settings: 
             glusterfs_slaves_address: ${@slave}
-          
+
+  installDummyAddons:
+    script: |
+      var regions = '${settings.regions}'.split(','),
+          actions = [];
+      for (var cluster = 2, n = regions.length + 1; cluster < n; cluster ++) {
+        actions.push({
+          jps: "${baseUrl}/scripts/dummyLE.jps?_r=${fn.random}",
+          envName: "${globals.envName}-" + cluster,
+          nodeGroup: "bl"
+        });
+        actions.push({
+          jps: "${baseUrl}/scripts/dummyCDN.jps?_r=${fn.random}",
+          envName: "${globals.envName}-" + cluster,
+          nodeGroup: "bl"
+        });
+      }
+      return { result: 0, onAfterReturn: { install: actions } };
+
+  shareCertificates:
+    - api: env.file.Read
+      path:  /var/lib/jelastic/SSL/customssl.conf
+      envName: ${settings.envName}-1
+      nodeId: ${globals.master_id_bl-1} 
+    - customSSLconf: ${response.body}
+      script: |
+        var regions = '${settings.regions}'.split(','),
+            actions = [];
+        for (var cluster = 2, n = regions.length + 1; cluster < n; cluster ++) {
+          actions.push({
+            jps: "https://raw.githubusercontent.com/sych74/wordpress-multiregions/master/scripts/shareSSL.jps?_r=${fn.random}",
+            envName: "${settings.envName}-" + cluster,
+            settings: {
+              customSSLconf: customSSLconf
+            }  
+          });
+        }
+        return { result: 0, onAfterReturn: { install: actions } };
+
   install-wordpress:
     - install: ${globals.wp_cluster_url}/scripts/installWP.jps
       envName: ${settings.envName}-1
