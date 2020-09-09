@@ -4,6 +4,7 @@ name: Share Certificates
 description: Share Certificates
 
 onInstall:
-  cmd[bl]: |-
-    echo "${settings.customSSLconf}" > /var/lib/jelastic/SSL/customssl.conf;
-    jem ssl install;
+  - cmd[bl]: |-
+      echo "${settings.customSSLconf}" > /var/lib/jelastic/SSL/customssl.conf;
+      jem ssl install;
+    user: root
