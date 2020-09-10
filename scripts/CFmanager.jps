@@ -5,10 +5,10 @@ description: CloudFlare Manager Add-on
 
 globals:
   action: add
-  cf_auth_email: sych74@gmail.com
+  cf_auth_email: 
   cf_auth_key: 34a8fac9c746885ee63c167099802fdef2c14
   cf_zone_id: b376649b6d17bf730ca9326f9985fd31
-  cf_domain: blablabla.jele.website
+  cf_domain: 
   
 onInstall:
 
