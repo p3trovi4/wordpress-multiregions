@@ -102,6 +102,11 @@ settings:
             name: cf_auth_key
             tooltip: ""
 
+          - caption: CloudFlare Zone ID
+            type: string
+            name: cf_zone_id
+            tooltip: ""
+
           - caption: Domain
             type: string
             name: cf_domain
@@ -141,6 +146,12 @@ onInstall:
           actions.push({
             jps: "${baseUrl}/scripts/CFmanager.jps?_r=${fn.random}",
             envName: "${settings.envName}-" + cluster,
+            settings: {
+              cf_auth_email: "${settings.cf_auth_email}",
+              cf_auth_key: "${settings.cf_auth_key}",
+              cf_zone_id: "${settings.cf_zone_id}",
+              cf_domain: "${settings.cf_domain}"
+            }
           });
         }
         return { result: 0, onAfterReturn: { install: actions } };
@@ -157,6 +168,8 @@ onInstall:
             nodeGroup: "cp",
             skipEmail: "true",
             settings: {
+              customDomains: "${globals.domain}",
+              fallbackToX1: "true",
               webroot: "true",
               webroot_path: "/var/www/webroot/ROOT"
             }
@@ -376,4 +389,4 @@ actions:
         wp_admin_pass: ${globals.wp_admin_pass}
         wp_title: "Hello World"
         wp_url: ${globals.protocol}://${settings.envName}-1.${globals.domain-1}
-     
+  
