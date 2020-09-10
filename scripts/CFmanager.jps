@@ -5,12 +5,27 @@ description: CloudFlare Manager Add-on
 
 globals:
   action: add
-  cf_auth_email: ${settings.cf_auth_email}
-  cf_auth_key: ${settings.cf_auth_key:34a8fac9c746885ee63c167099802fdef2c14}
-  cf_zone_id: ${settings.cf_zone_id:b376649b6d17bf730ca9326f9985fd31}
-  cf_domain: ${settings.cf_domain}
+  cf_auth_email: sych74@gmail.com
+  cf_auth_key: 34a8fac9c746885ee63c167099802fdef2c14
+  cf_zone_id: b376649b6d17bf730ca9326f9985fd31
+  cf_domain: blablabla.jele.website
+
+onBeforeDelete:
+  deleteRecord:
+    extIP: ${nodes.bl.master.extIPs}
+    
+onBeforeDetachExtIp:
+  deleteRecord:
+    extIP: ${nodes.bl.master.extIPs}
+
+onAfterAttachExtIp:
+  addRecord:
+    extIP: ${nodes.bl.master.extIPs}
   
 onInstall:
+
+  - addRecord:
+      extIP: ${nodes.bl.master.extIPs}
 
 actions:
   addRecord:
@@ -31,3 +46,4 @@ actions:
         -H "X-Auth-Email: ${globals.cf_auth_email}" \
         -H "X-Auth-Key: ${globals.cf_auth_key}" \
         -H "Content-Type: application/json" | python -m json.tool;
+
