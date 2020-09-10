@@ -84,6 +84,35 @@ settings:
       value: true
       disabled: false
 
+    - caption: CloudFlare registration
+      type: checkbox
+      name: cf-addon
+      value: false
+      disabled: false
+      tooltip: "CloudFlare registration"
+      showIf:
+        true:
+          - caption: CloudFlare Auth Email
+            type: string
+            name: cf_auth_email
+            tooltip: ""
+
+          - caption: CloudFlare Auth Key
+            type: string
+            name: cf_auth_key
+            tooltip: ""
+
+          - caption: Domain
+            type: string
+            name: cf_domain
+            tooltip: ""
+
+        false:
+          - hideLabel: true
+            hidden: true
+            type: label
+            caption: string
+            name: customString 
 
 globals:
   wp_cluster_url: https://raw.githubusercontent.com/sych74/wordpress-cluster/v3.0.0
@@ -97,14 +126,28 @@ globals:
   success: success
   email: default
 
-
-
 onInstall:
   - initGlobals
+  - setGlobals:
+      domain: ${settings.envName}-1.${globals.domain-1}
   - createEnvs
   - setCustomGlobals
   - installDummyAddons
-  - if (${settings.le-addon:false:false} || ${settings.cdn-addon:false}):
+  - if (${settings.cf-addon:false}):
+    - script: |
+        var regions = '${settings.regions}'.split(','),
+            actions = [];
+        for (var cluster = 1, n = regions.length + 1; cluster < n; cluster ++) {
+          actions.push({
+            jps: "${baseUrl}/scripts/CFmanager.jps?_r=${fn.random}",
+            envName: "${settings.envName}-" + cluster,
+          });
+        }
+        return { result: 0, onAfterReturn: { install: actions } };
+    - setGlobals:
+        domain: ${settings.cf_domain}         
+    
+  - if (${settings.le-addon:false} || ${settings.cdn-addon:false}):
     - script: |
         var actions = [];
         if (${settings.le-addon:false})
@@ -333,3 +376,4 @@ actions:
         wp_admin_pass: ${globals.wp_admin_pass}
         wp_title: "Hello World"
         wp_url: ${globals.protocol}://${settings.envName}-1.${globals.domain-1}
+     
