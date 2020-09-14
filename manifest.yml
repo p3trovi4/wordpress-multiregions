@@ -395,3 +395,8 @@ actions:
         wp_title: "Hello World"
         wp_url: ${globals.protocol}://${globals.domain}
   
+success:
+  email: success/email/${globals.regionsCount}-region-${globals.success}.md?_r=${fn.random}
+  text: success/text//${globals.success}.md?_r=${fn.random}
+
+startPage: ${globals.PROTOCOL}://${globals.domain}/
