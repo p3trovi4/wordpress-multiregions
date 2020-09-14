@@ -10,5 +10,4 @@ logo: images/lets-encrypt.png
 
 description:
   text: /text/description.md
-  short: Free tool to configure support of secured SSL connection for an environment,
-    by either internal or custom domain name.
+  short: Use/Manage/Configure add-on on the master environment of the Multiregional WordPress Cluster
