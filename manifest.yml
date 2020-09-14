@@ -1,14 +1,15 @@
 type: install
 jpsVersion: '1.7.2'
-name: WordPress Cluster Multiregions
+name: Multiregional WordPress Cluster
 id: wordpress-cluster-multiregions
 categories:
   - apps/clusters
   - apps/content-management
 description: 
-  text: WordPress Cluster package provides integrated autoscaling and high availability for development and production environments.
-    The platform automatically deploys and configures chosen tolopology and required addons at specified regions.
-  short: WordPress Cluster Pack
+  text: Highly-available and reliable WordPress Cluster with the multiregional setup. 
+    The package creates interconnected WordPress instances in multiple availability zones (e.g. USA, Europe), ensuring the best performance and least latency for the end-users worldwide. 
+    The incoming requests are optimally distributed via GeoDNS, allowing processing hundreds of thousand requests daily.
+  short: Enterprise-grade WordPress Cluster with servers in multiple regions.
 logo: https://raw.githubusercontent.com/sych74/wordpress-multiregions/master/images/wp-cluster-kit.png
 baseUrl: https://raw.githubusercontent.com/sych74/wordpress-multiregions/master
 
@@ -137,6 +138,8 @@ onInstall:
       domain: ${settings.envName}-1.${globals.domain-1}
   - createEnvs
   - setCustomGlobals
+  - setupGaleraCluster
+  - setupGeoGlusterFS
   - installDummyAddons
   - if (${settings.cf-addon:false}):
     - script: |
@@ -185,6 +188,8 @@ onInstall:
             }
           });
         return { result: 0, onAfterReturn: { install: actions } };
+
+  - install-wordpress
           
 actions:
 
@@ -198,25 +203,25 @@ actions:
         resp = resp.array;
         for (var i = 0, n = regions.length; i < n; i ++) {
           index = i + 1;
-          onAfterReturn.setGlobals["region-" + index] = regions[i];
+          glbs["region-" + index] = regions[i];
           for (var a = 0, b = resp.length; a < b; a++) {
             for (var k = 0, l = resp[a].hardNodeGroups.length; k < l; k++) {
               if (resp[a].hardNodeGroups[k].uniqueName == regions[i])
-                onAfterReturn.setGlobals["domain-" + index] = resp[i].domain;
+                glbs["domain-" + index] = resp[i].domain;
             }
           }
           if (index == 1) {
-            onAfterReturn.setGlobals["displayName-" + index] = "WP Cluster Master";
-            onAfterReturn.setGlobals["initial_master-" + index] = "true";
-            onAfterReturn.setGlobals["initial_slave-" + index] = "false";
+            glbs["displayName-" + index] = "WP Cluster Master";
+            glbs["initial_master-" + index] = "true";
+            glbs["initial_slave-" + index] = "false";
           } else {
-            onAfterReturn.setGlobals["displayName-" + index] = "WP Cluster Slave " + index;
-            onAfterReturn.setGlobals["initial_master-" + index] = "false";
-            onAfterReturn.setGlobals["initial_slave-" + index] = "true";
+            glbs["displayName-" + index] = "WP Cluster Slave " + index;
+            glbs["initial_master-" + index] = "false";
+            glbs["initial_slave-" + index] = "true";
           }
         }
-        onAfterReturn.setGlobals["envGroups"] = envGroups;
-        onAfterReturn.setGlobals["regionsCount"] = regions.length;
+        glbs["envGroups"] = envGroups;
+        glbs["regionsCount"] = regions.length;
         return { result: 0, onAfterReturn: onAfterReturn };
 
   createEnvs:
@@ -225,7 +230,7 @@ actions:
             actions = [];
         for (var cluster = 1, n = regions.length + 1; cluster < n; cluster ++) {
           actions.push({
-            jps: "https://raw.githubusercontent.com/sych74/test/master/storage.jps?_r=${fn.random}",
+            jps: "${globals.wp_cluster_url}/manifest.jps?_r=${fn.random}",
             envName: "${settings.envName}-" + cluster,
             loggerName: "${settings.envName}-" + cluster,
             envGroups: "${globals.envGroups}",
@@ -256,22 +261,22 @@ actions:
           if (resp.result != 0) return resp;
           for (var i = 0, k = resp.nodes; i < k.length; i++) {
            if ((k[i].nodeGroup == 'storage') && (k[i].ismaster)) {
-              onAfterReturn.setGlobals["master_id_glusterfs-" + cluster] = k[i].id;
-              onAfterReturn.setGlobals["master_ip_glusterfs-" + cluster] = k[i].address;
+              glbs["master_id_glusterfs-" + cluster] = k[i].id;
+              glbs["master_ip_glusterfs-" + cluster] = k[i].address;
               if (cluster > 1)
                 glusterfs_slaves_address.push(k[i].address);
             }
             if (k[i].nodeGroup == 'sqldb') {
               galera_nodes_address += k[i].address + ",";
-              k[i].ismaster ? onAfterReturn.setGlobals["master_id_galera-" + cluster] = k[i].id : 0;
+              k[i].ismaster ? glbs["master_id_galera-" + cluster] = k[i].id : 0;
             }
             if (k[i].nodeGroup == 'bl') 
-              k[i].ismaster ? onAfterReturn.setGlobals["master_id_bl-" + cluster] = k[i].id : 0;
+              k[i].ismaster ? glbs["master_id_bl-" + cluster] = k[i].id : 0;
           }
         }
         galera_nodes_address = galera_nodes_address.slice(0, -1);
-        onAfterReturn.setGlobals["galera_nodes_address"] = galera_nodes_address;
-        onAfterReturn.setGlobals["glusterfs_slaves_address"] = glusterfs_slaves_address;
+        glbs["galera_nodes_address"] = galera_nodes_address;
+        glbs["glusterfs_slaves_address"] = glusterfs_slaves_address;
         return { result: 0, onAfterReturn: onAfterReturn };
 
   setupGaleraCluster:
@@ -388,5 +393,5 @@ actions:
         db_pass: ${globals.db_pass}
         wp_admin_pass: ${globals.wp_admin_pass}
         wp_title: "Hello World"
-        wp_url: ${globals.protocol}://${settings.envName}-1.${globals.domain-1}
+        wp_url: ${globals.protocol}://${globals.domain}
   
