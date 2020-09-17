@@ -197,7 +197,9 @@ actions:
     - script: |
         var regions = '${settings.regions}'.split(','),
             envGroups = eval('(' + MANIFEST + ')').envGroups, index,
-            onAfterReturn = { setGlobals: {} }, resp, domain;
+            onAfterReturn = { setGlobals: {} }, 
+            glbs = onAfterReturn.setGlobals,
+            resp, domain;
         resp = jelastic.env.control.GetRegions(appid, session);
         if (resp.result != 0) return resp;
         resp = resp.array;
@@ -255,6 +257,7 @@ actions:
         var regions = '${settings.regions}'.split(','),
             galera_nodes_address = "",
             glusterfs_slaves_address = [],
+            glbs = onAfterReturn.setGlobals,
             onAfterReturn = { setGlobals: {} };
         for (var cluster = 1, n = regions.length + 1; cluster < n; cluster ++) {
           var resp = jelastic.env.control.GetEnvInfo('${settings.envName}-' + cluster, session);
@@ -396,7 +399,7 @@ actions:
         wp_url: ${globals.protocol}://${globals.domain}
   
 success:
-  email: success/email/${globals.regionsCount}-region-${globals.success}.md?_r=${fn.random}
+  email: success/email/${globals.regionsCount}-region-${globals.email}.md?_r=${fn.random}
   text: success/text//${globals.success}.md?_r=${fn.random}
 
 startPage: ${globals.PROTOCOL}://${globals.domain}/
