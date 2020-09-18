@@ -137,6 +137,7 @@ onInstall:
   - setGlobals:
       domain: ${settings.envName}-1.${globals.domain-1}
   - createEnvs
+  - installEnvsManager
   - setCustomGlobals
   - setupGaleraCluster
   - setupGeoGlusterFS
@@ -364,12 +365,12 @@ actions:
           settings: 
             glusterfs_slaves_address: ${@slave}
 
-  installDummyAddons:
+  installEnvsManager:
     script: |
       var regions = '${settings.regions}'.split(','),
           actions = [];
       actions.push({
-          jps: "${baseUrl}/scripts/multiregionSSLmanager.jps?_r=${fn.random}",
+          jps: "${baseUrl}/scripts/masterEnvManager.jps?_r=${fn.random}",
           envName: "${settings.envName}-1",
           settings: {
             regionsCount: "${globals.regionsCount}",
@@ -378,14 +379,12 @@ actions:
         });
       for (var cluster = 2, n = regions.length + 1; cluster < n; cluster ++) {
         actions.push({
-          jps: "${baseUrl}/scripts/dummyLE.jps?_r=${fn.random}",
+          jps: "${baseUrl}/scripts/slaveEnvManager.jps?_r=${fn.random}",
           envName: "${settings.envName}-" + cluster,
-          nodeGroup: "bl"
-        });
-        actions.push({
-          jps: "${baseUrl}/scripts/dummyCDN.jps?_r=${fn.random}",
-          envName: "${settings.envName}-" + cluster,
-          nodeGroup: "bl"
+          settings: {
+            regionsCount: "${globals.regionsCount}",
+            envName: "${settings.envName}"
+          }
         });
       }
       return { result: 0, onAfterReturn: { install: actions } };

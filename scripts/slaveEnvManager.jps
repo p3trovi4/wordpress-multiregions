@@ -1,0 +1,37 @@
+jpsType: update
+id: wordpress-multiregion-master-manager-addon
+name: WordPress Multiregion Master Manager Add-on
+description: WordPress Multiregion Master Manager Add-on
+
+globals:
+  regionsCount: ${settings.regionsCount:1}
+  envName: ${settings.envName}
+
+onAfterBindSSL: shareCertificates
+
+onInstall:
+  - cmd[cp,bl]: |-
+      [ ! -d /var/lib/jelastic/keys/letsencrypt ] && mkdir -p /var/lib/jelastic/keys/letsencrypt;
+      echo "webroot=true" > /var/lib/jelastic/keys/letsencrypt/settings-custom;
+      echo "webrootPath=/var/www/webroot/ROOT" >> /var/lib/jelastic/keys/letsencrypt/settings-custom;
+    user: root
+
+actions:
+  shareCertificates:
+    - api: env.file.Read
+      path:  /var/lib/jelastic/SSL/customssl.conf
+      nodeId: ${nodes.bl.master.id} 
+    - customSSLconf: ${response.body}
+      script: |
+        var regionsCount = parseInt('${globals.regionsCount}', 10),
+            actions = [];
+        for (var cluster = 2, n = regionsCount + 1; cluster < n; cluster ++) {
+          actions.push({
+            jps: "https://raw.githubusercontent.com/sych74/wordpress-multiregions/master/scripts/shareSSL.jps?_r=${fn.random}",
+            envName: "${globals.envName}-" + cluster,
+            settings: {
+              customSSLconf: customSSLconf
+            }  
+          });
+        }
+        return { result: 0, onAfterReturn: { install: actions } };
