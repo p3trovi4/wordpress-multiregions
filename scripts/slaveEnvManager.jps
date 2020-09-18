@@ -14,4 +14,6 @@ actions:
   installDummyAddons:
     install:
       - jps: /dummyLE.jps?_r=${fn.random}
+        nodeGroup: cp, bl
       - jps: /dummyCDN.jps?_r=${fn.random}
+        nodeGroup: cp, bl
