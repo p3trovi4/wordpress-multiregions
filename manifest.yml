@@ -257,8 +257,8 @@ actions:
         var regions = '${settings.regions}'.split(','),
             galera_nodes_address = "",
             glusterfs_slaves_address = [],
-            glbs = onAfterReturn.setGlobals,
-            onAfterReturn = { setGlobals: {} };
+            onAfterReturn = { setGlobals: {} },
+            glbs = onAfterReturn.setGlobals;
         for (var cluster = 1, n = regions.length + 1; cluster < n; cluster ++) {
           var resp = jelastic.env.control.GetEnvInfo('${settings.envName}-' + cluster, session);
           if (resp.result != 0) return resp;
