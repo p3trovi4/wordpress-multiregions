@@ -241,6 +241,8 @@ actions:
             settings: {
               waf: "${settings.waf}",
               wp_protect: "${settings.wp_protect}",
+              le-addon: "false",
+              cdn-addon: "false",
               is_install_wp: "false",
               is_db_cluster: "false",
               bl_count: "1",
