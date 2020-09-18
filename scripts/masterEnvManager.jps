@@ -10,13 +10,16 @@ globals:
 onAfterBindSSL: shareCertificates
 
 onInstall:
-  - cmd[cp,bl]: |-
-      [ ! -d /var/lib/jelastic/keys/letsencrypt ] && mkdir -p /var/lib/jelastic/keys/letsencrypt;
-      echo "webroot=true" > /var/lib/jelastic/keys/letsencrypt/settings-custom;
-      echo "webrootPath=/var/www/webroot/ROOT" >> /var/lib/jelastic/keys/letsencrypt/settings-custom;
-    user: root
+  - setLEwebroot
 
 actions:
+  setLEwebroot:
+    - cmd[cp,bl]: |-
+        [ ! -d /var/lib/jelastic/keys/letsencrypt ] && mkdir -p /var/lib/jelastic/keys/letsencrypt;
+        echo "webroot=true" > /var/lib/jelastic/keys/letsencrypt/settings-custom;
+        echo "webrootPath=/var/www/webroot/ROOT" >> /var/lib/jelastic/keys/letsencrypt/settings-custom;
+      user: root
+  
   shareCertificates:
     - api: env.file.Read
       path:  /var/lib/jelastic/SSL/customssl.conf

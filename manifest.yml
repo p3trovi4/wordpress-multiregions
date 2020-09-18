@@ -256,6 +256,30 @@ actions:
         }
         return { result: 0, onAfterReturn: { install: actions } };
 
+  installEnvsManager:
+    script: |
+      var regions = '${settings.regions}'.split(','),
+          actions = [];
+      actions.push({
+          jps: "${baseUrl}/scripts/masterEnvManager.jps?_r=${fn.random}",
+          envName: "${settings.envName}-1",
+          settings: {
+            regionsCount: "${globals.regionsCount}",
+            envName: "${settings.envName}"
+          }
+        });
+      for (var cluster = 2, n = regions.length + 1; cluster < n; cluster ++) {
+        actions.push({
+          jps: "${baseUrl}/scripts/slaveEnvManager.jps?_r=${fn.random}",
+          envName: "${settings.envName}-" + cluster,
+          settings: {
+            regionsCount: "${globals.regionsCount}",
+            envName: "${settings.envName}"
+          }
+        });
+      }
+      return { result: 0, onAfterReturn: { install: actions } };
+        
   setCustomGlobals:
     - script: |
         var regions = '${settings.regions}'.split(','),
@@ -364,30 +388,6 @@ actions:
           envName: ${settings.envName}-1
           settings: 
             glusterfs_slaves_address: ${@slave}
-
-  installEnvsManager:
-    script: |
-      var regions = '${settings.regions}'.split(','),
-          actions = [];
-      actions.push({
-          jps: "${baseUrl}/scripts/masterEnvManager.jps?_r=${fn.random}",
-          envName: "${settings.envName}-1",
-          settings: {
-            regionsCount: "${globals.regionsCount}",
-            envName: "${settings.envName}"
-          }
-        });
-      for (var cluster = 2, n = regions.length + 1; cluster < n; cluster ++) {
-        actions.push({
-          jps: "${baseUrl}/scripts/slaveEnvManager.jps?_r=${fn.random}",
-          envName: "${settings.envName}-" + cluster,
-          settings: {
-            regionsCount: "${globals.regionsCount}",
-            envName: "${settings.envName}"
-          }
-        });
-      }
-      return { result: 0, onAfterReturn: { install: actions } };
 
   install-wordpress:
     - install: ${globals.wp_cluster_url}/scripts/installWP.jps
