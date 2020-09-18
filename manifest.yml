@@ -75,19 +75,19 @@ settings:
 
     - caption: Install Let's Encrypt SSL with Auto-Renewal
       type: checkbox
-      name: le-addon
+      name: le_addon
       value: true
       disabled: false
 
     - caption: Install Lightning-Fast Premium CDN with 130+ PoPs
       type: checkbox
-      name: cdn-addon
+      name: cdn_addon
       value: true
       disabled: false
 
     - caption: CloudFlare registration
       type: checkbox
-      name: cf-addon
+      name: cf_addon
       value: false
       disabled: false
       tooltip: "CloudFlare registration"
@@ -161,10 +161,10 @@ onInstall:
     - setGlobals:
         domain: ${settings.cf_domain}         
     
-  - if (${settings.le-addon:false} || ${settings.cdn-addon:false}):
+  - if (${settings.le_addon:false} || ${settings.cdn_addon:false}):
     - script: |
         var actions = [];
-        if (${settings.le-addon:false})
+        if (${settings.le_addon:false})
           actions.push({
             jps: "https://github.com/jelastic-jps/lets-encrypt/blob/master/manifest.jps?_r=${fn.random}?_r=${fn.random}",
             envName: "${settings.envName}-1",
@@ -177,7 +177,7 @@ onInstall:
               webroot_path: "/var/www/webroot/ROOT"
             }
           });
-        if (${settings.cdn-addon:false})
+        if (${settings.cdn_addon:false})
           actions.push({
             jps: "https://raw.githubusercontent.com/edgeport/cdn/master/manifest.yml?_r=${fn.random}",
             envName: "${settings.envName}-1",
@@ -241,8 +241,8 @@ actions:
             settings: {
               waf: "${settings.waf}",
               wp_protect: "${settings.wp_protect}",
-              le-addon: "false",
-              cdn-addon: "false",
+              le_addon: "false",
+              cdn_addon: "false",
               is_install_wp: "false",
               is_db_cluster: "false",
               bl_count: "1",
