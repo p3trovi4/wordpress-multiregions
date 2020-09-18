@@ -129,7 +129,7 @@ globals:
   protocol: http
   wp_admin_pass: ${fn.password(10)}
   ls_admin_pass: ${fn.password(10)}
-  success: success
+  success: default
   email: default
 
 onInstall:
@@ -401,6 +401,6 @@ actions:
   
 success:
   email: success/email/${globals.regionsCount}-region-${globals.email}.md?_r=${fn.random}
-  text: success/text//${globals.success}.md?_r=${fn.random}
+  text: success/text//${globals.regionsCount}-region-${globals.success}.md?_r=${fn.random}
 
 startPage: ${globals.protocol}://${globals.domain}/
