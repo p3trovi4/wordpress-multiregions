@@ -141,7 +141,6 @@ onInstall:
   - setCustomGlobals
   - setupGaleraCluster
   - setupGeoGlusterFS
-  - installDummyAddons
   - if (${settings.cf-addon:false}):
     - script: |
         var regions = '${settings.regions}'.split(','),
