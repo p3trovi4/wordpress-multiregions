@@ -9,6 +9,10 @@ globals:
 
 onAfterBindSSL: shareCertificates
 
+onBeforeDelete:
+  slavesDelete:
+    password: ${event.params.password}
+
 onInstall:
   - setLEwebroot
 
@@ -38,3 +42,17 @@ actions:
           });
         }
         return { result: 0, onAfterReturn: { install: actions } };
+
+  slavesDelete:
+      script: |
+        var regionsCount = parseInt('${globals.regionsCount}', 10),
+            api = [];
+        for (var cluster = 2, n = regionsCount + 1; cluster < n; cluster ++) {
+          api.push({
+            method: "env.control.DeleteEnv",
+            envName: "${globals.envName}-" + cluster,
+            password: "${this.password}"
+          });
+        }
+        return { result: 0, onAfterReturn: { api: api } };
+
