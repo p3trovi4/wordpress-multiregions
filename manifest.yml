@@ -7,8 +7,7 @@ categories:
   - apps/content-management
 description: 
   text: Highly-available and reliable WordPress Cluster with the multiregional setup. 
-    The package creates interconnected WordPress instances in multiple availability zones (e.g. USA, Europe), ensuring the best performance and least latency for the end-users worldwide. 
-    The incoming requests are optimally distributed via GeoDNS, allowing processing hundreds of thousand requests daily.
+    The package creates interconnected WordPress instances in multiple availability zones (e.g. USA, Europe), ensuring the best performance and least latency for the end-users worldwide.
   short: Enterprise-grade WordPress Cluster with servers in multiple regions.
 logo: https://raw.githubusercontent.com/sych74/wordpress-multiregions/master/images/for-all-back.png
 baseUrl: https://raw.githubusercontent.com/sych74/wordpress-multiregions/master
