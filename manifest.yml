@@ -89,7 +89,8 @@ settings:
       type: checkbox
       name: cf_addon
       value: false
-      disabled: false
+      disabled: true
+      hidden: true
       tooltip: "CloudFlare registration"
       showIf:
         true:
