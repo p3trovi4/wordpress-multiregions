@@ -163,6 +163,7 @@ onInstall:
         protocol: https
 
   - install-wordpress
+  - cacheManager
 
   - if (${settings.le_addon:false} || ${settings.cdn_addon:false}):
     - if (${settings.le_addon:false}):
@@ -392,6 +393,18 @@ actions:
           envName: ${settings.envName}-1
           settings: 
             glusterfs_slaves_address: ${@slave}
+
+  cacheManager:
+    script: |
+      var regions = '${settings.regions}'.split(','),
+          actions = [];
+      for (var cluster = 1, n = regions.length + 1; cluster < n; cluster ++) {
+        actions.push({
+          jps: "${baseUrl}/scripts/cacheManager.jps?_r=${fn.random}",
+          envName: "${settings.envName}-" + cluster,
+        });
+      }
+      return { result: 0, onAfterReturn: { install: actions } };
 
   install-wordpress:
     - install: ${globals.wp_cluster_url}/scripts/installWP.jps
