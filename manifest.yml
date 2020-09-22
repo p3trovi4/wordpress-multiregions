@@ -159,9 +159,15 @@ onInstall:
         }
         return { result: 0, onAfterReturn: { install: actions } };
     - setGlobals:
-        domain: ${settings.cf_domain}         
-    
+        domain: ${settings.cf_domain}
+        protocol: https
+
+  - install-wordpress
+
   - if (${settings.le_addon:false} || ${settings.cdn_addon:false}):
+    - if (${settings.le_addon:false}):
+      - setGlobals:
+          protocol: https      
     - script: |
         var actions = [];
         if (${settings.le_addon:false})
@@ -188,8 +194,6 @@ onInstall:
             }
           });
         return { result: 0, onAfterReturn: { install: actions } };
-
-  - install-wordpress
           
 actions:
 
