@@ -1,0 +1,11 @@
+jpsType: update
+id: wordpress-multiregion-cache-manager-addon
+name: WordPress Multiregion Cache Manager Add-on
+description: WordPress Multiregion Cache Manager Add-on
+
+onInstall:
+  - cmd[bl]: rm -rf /tmp/lscache/vhosts/Jelastic/*;
+  - forEach(nodes.cp):
+    - cmd[${@i.id}]: |-
+        cd /var/www/webroot/ROOT; wp cache flush --path=${SERVER_WEBROOT} &>> /var/log/run.log;
+        cd /var/www/webroot/ROOT; wp litespeed-purge all --path=${SERVER_WEBROOT} &>> /var/log/run.log;
