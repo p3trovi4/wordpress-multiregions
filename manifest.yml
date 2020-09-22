@@ -137,8 +137,8 @@ onInstall:
   - setGlobals:
       domain: ${settings.envName}-1.${globals.domain-1}
   - createEnvs
-  - installEnvsManager
   - setCustomGlobals
+  - installEnvsManager
   - setupGaleraCluster
   - setupGeoGlusterFS
   - if (${settings.cf-addon:false}):
@@ -277,7 +277,8 @@ actions:
           envName: "${settings.envName}-" + cluster,
           settings: {
             regionsCount: "${globals.regionsCount}",
-            envName: "${settings.envName}"
+            envName: "${settings.envName}",
+            master_id_glusterfs: "${globals.master_id_glusterfs-1}"
           }
         });
       }
