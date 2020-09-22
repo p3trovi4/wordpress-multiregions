@@ -9,7 +9,7 @@ description:
   text: Highly-available and reliable WordPress Cluster with the multiregional setup. 
     The package creates interconnected WordPress instances in multiple availability zones (e.g. USA, Europe), ensuring the best performance and least latency.
   short: Enterprise-grade WordPress Cluster with servers in multiple regions.
-logo: https://raw.githubusercontent.com/sych74/wordpress-multiregions/master/images/dark-back.svg
+logo: https://raw.githubusercontent.com/sych74/wordpress-multiregions/master/images/dark-back-1.svg
 baseUrl: https://raw.githubusercontent.com/sych74/wordpress-multiregions/master
 
 settings:
