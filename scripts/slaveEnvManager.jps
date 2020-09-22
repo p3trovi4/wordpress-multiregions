@@ -6,6 +6,9 @@ description: WordPress Multiregion Slave Manager Add-on
 globals:
   regionsCount: ${settings.regionsCount:1}
   envName: ${settings.envName}
+  master_id_glusterfs: ${settings.master_id_glusterfs}
+  
+onBeforeDelete: deleteGeoGlusterSlave
 
 onInstall:
   - installDummyAddons
@@ -14,6 +17,15 @@ actions:
   installDummyAddons:
     install:
       - jps: /dummyLE.jps?_r=${fn.random}
-        nodeGroup: cp, bl
+        nodeGroup: cp
       - jps: /dummyCDN.jps?_r=${fn.random}
-        nodeGroup: cp, bl
+        nodeGroup: bl
+        
+  deleteGeoGlusterSlave:
+    - api: env.control.ExecCmdById
+      envName: ${globals.envName}-1
+      nodeId: ${globals.master_id_glusterfs}
+      commandList:
+        - command: |-
+            gluster volume geo-replication jelastic jelastic@${nodes.storage.master.address}::jelastic stop force
+            gluster volume geo-replication jelastic jelastic@${nodes.storage.master.address}::jelastic delete
