@@ -50,7 +50,6 @@ if (resp.result != 0) {
     return resp;
 }
 
-var data = getList("test-sdsd-1", resp.infos);
+var data = getList(envName, resp.infos);
 
 return data;
-
