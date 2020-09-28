@@ -28,7 +28,7 @@ function getList(envName, items) {
     targetEnvNamePrefix = dataExtractor(envName).envNamePrefix; 
 
     for(var i=0, item; item = items[i]; i++) {
-        itemData = dataExtractor(item);
+        itemData = dataExtractor(item.env.envName);
 
         if (itemData && filter(itemData)) {
             result.push(itemData.envName);
