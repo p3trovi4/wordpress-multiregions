@@ -46,6 +46,6 @@ var resp = jelastic.environment.control.GetEnvs(appid, session);
 
 if (resp.result != 0) return resp;
 
-var data = getList(envName, resp.infos);
+var data = getList("test-1", resp.infos);
 
 return data;
