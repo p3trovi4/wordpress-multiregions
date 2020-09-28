@@ -47,9 +47,8 @@ function getList(envName, items) {
 var resp = jelastic.environment.control.GetEnvs(appid, session);
 
 if (resp.result != 0) {
-    result resp;
+    return resp;
 }
-
 
 var data = getList("test-sdsd-1", resp.infos);
 
